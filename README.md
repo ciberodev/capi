@@ -1,5 +1,20 @@
 # Capi
-Capi is an OO language that redefines objects: memory does not belong to objects, but to "Domains." This ensures static safety, deterministic management, high performance, and safe concurrency, without GC or RC, and without Rust-style ownership copying.
+
+**Capi** is an object-oriented programming language that aims to combine:
+
+*   Classic object-oriented programming;
+*   Static memory safety;
+*   Deterministic memory management;
+*   No garbage collector;
+*   No reference counting;
+*   High performance;
+*   Safe concurrency.
+
+The language's approach is not to adapt Rust's ownership model to traditional object-oriented programming.
+
+Capi redefines the object model itself.
+
+Instead of treating each object as the direct owner of the memory it occupies, the language considers memory to belong to a larger unit called a **Domain**.
 
 
 ## UNDER DEVELOPMENT
