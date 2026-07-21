@@ -1,9 +1,13 @@
-# capi
-Capi é uma linguagem OO que redefine objetos: a memória não pertence aos objetos, mas a "Domains". Isso garante segurança estática, gerenciamento determinístico, alto desempenho e concorrência segura, sem GC ou RC, sem copiar o ownership do Rust.
+# Capi
+Capi is an OO language that redefines objects: memory does not belong to objects, but to "Domains." This ensures static safety, deterministic management, high performance, and safe concurrency, without GC or RC, and without Rust-style ownership copying.
 
 
-## EM DESENVOLVIMENTO
+## UNDER DEVELOPMENT
 
-### Fase atual:
+### Current phase:
 
-* Criação do documento 27 - Bootstrap Plan e Arquitetura da Implementação Oficial.md - EM ANDAMENTO
+* Creation of document "27 - Bootstrap Plan e Arquitetura da Implementação Oficial.md" – IN PROGRESS
+
+### Important
+
+The official language development documentation is in Brazilian Portuguese (PT-BR); there will be no translation of this documentation. Only after the language is ready will documents such as manuals, wikis, and other materials regarding the use of Capi be made available in English (and other languages, if necessary).
