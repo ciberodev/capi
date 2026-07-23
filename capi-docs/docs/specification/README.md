@@ -7,7 +7,7 @@ A premissa central da especificação é a separação entre garantias e mecanis
 ## Organização
 
 - [`language/`](language/) contém a especificação da linguagem, dos seus modelos semânticos e das interfaces públicas do ecossistema.
-- [`implementation/`](implementation/) contém a especificação de implementação do compilador oficial e o plano de bootstrap.
+- [`implementation/`](implementation/) contém a especificação de implementação do compilador oficial, o plano de bootstrap e o plano de desenvolvimento da implementação oficial.
 
 ## Modelo Geral da Linguagem
 
@@ -43,7 +43,7 @@ A arquitetura especificada descreve um compilador em fases, com fronteiras clara
 
 Para entender a linguagem, leia primeiro os documentos `00` a `05`.
 Para entender como a linguagem é compilada e executada, continue com `06` a `12`.
-Para implementar o compilador oficial ou uma implementação compatível, leia `13` a `27` na ordem.
+Para implementar o compilador oficial ou uma implementação compatível, leia `13` a `28` na ordem.
 
 ## Documentos da Linguagem
 
@@ -82,6 +82,7 @@ Para implementar o compilador oficial ou uma implementação compatível, leia `
 | [`25 — Testes, Validação e Conformidade`](implementation/25%20%E2%80%94%20Testes%2C%20Valida%C3%A7%C3%A3o%20e%20Conformidade.md) | Testes | Define estratégia de testes, golden tests, integração, conformidade, regressão e validação contínua. |
 | [`26 — Bootstrap e Subconjunto Inicial`](implementation/26%20%E2%80%94%20Bootstrap%20e%20Subconjunto%20Inicial.md) | Bootstrap | Define o subconjunto inicial, fases de evolução e critérios para avançar rumo à auto-hospedagem. |
 | [`27 — Bootstrap Plan e Arquitetura da Implementação Oficial`](implementation/27%20%E2%80%94%20Bootstrap%20Plan%20e%20Arquitetura%20da%20Implementa%C3%A7%C3%A3o%20Oficial.md) | Plano oficial | Consolida o plano de engenharia, decisões arquiteturais, backend inicial, milestones e critérios de conclusão. |
+| [`28 — Plano de Desenvolvimento da Implementação Oficial`](implementation/28%20%E2%80%94%20Plano%20de%20Desenvolvimento%20da%20Implementa%C3%A7%C3%A3o%20Oficial.md) | Plano operacional | Define a ordem dos stages, entregas obrigatórias, critérios de entrada e conclusão, rastreabilidade e execução prática da implementação oficial. |
 
 ## Invariantes da Especificação
 
