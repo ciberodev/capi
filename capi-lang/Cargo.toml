@@ -1,0 +1,30 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.88.0"
+license = "Apache-2.0"
+repository = "https://github.com/ciberodev/capi"
+
+[workspace.dependencies]
+capi-cli = { path = "crates/capi-cli" }
+capi-common = { path = "crates/capi-common" }
+capi-diagnostics = { path = "crates/capi-diagnostics" }
+capi-driver = { path = "crates/capi-driver" }
+capi-session = { path = "crates/capi-session" }
+capi-source = { path = "crates/capi-source" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.rustdoc]
+bare_urls = "deny"
+broken_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"

@@ -1,0 +1,138 @@
+name: Capi Lang CI
+
+on:
+  push:
+    paths:
+      - ".github/workflows/capi-lang-ci.yml"
+      - "capi-lang/**"
+  pull_request:
+    paths:
+      - ".github/workflows/capi-lang-ci.yml"
+      - "capi-lang/**"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: capi-lang
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+  tools:
+    name: Toolchain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Check tool versions
+        run: scripts/tools.sh
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked
+
+  deps:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Check dependency policy
+        run: scripts/deps.sh
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Run tests
+        run: cargo test --workspace --locked
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Build workspace
+        run: cargo build --workspace --locked
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Build Rust documentation
+        run: cargo doc --workspace --no-deps --locked
+
+  capic:
+    name: Capic Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Check help
+        run: cargo run -p capi-cli --locked -- --help
+
+      - name: Check version
+        run: cargo run -p capi-cli --locked -- --version
+
+      - name: Check missing source error
+        run: |
+          set +e
+          output="$(cargo run -p capi-cli --locked -- does-not-exist.capi 2>&1)"
+          status="$?"
+          set -e
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep "error: failed to read source file 'does-not-exist.capi'"

@@ -1,0 +1,14 @@
+[package]
+name = "capi-session"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+capi-diagnostics.workspace = true
+capi-source.workspace = true
+
+[lints]
+workspace = true

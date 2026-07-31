@@ -3,7 +3,7 @@
 **Projeto:** Linguagem Capi
 **Documento:** 28 — Plano de Desenvolvimento da Implementação Oficial
 **Versão:** 1.0
-**Status:** Proposta inicial
+**Status:** Aprovado
 **Natureza:** Planejamento normativo-operacional da implementação oficial
 **Documentos base:** 00 a 27
 

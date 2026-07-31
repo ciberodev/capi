@@ -2,7 +2,7 @@
 
 **Projeto:** Linguagem Capi  
 **Documento:** DEFINITION-OF-DONE  
-**Status:** Proposto  
+**Status:** Aprovado  
 **Stage:** Stage 0 — Fundação do projeto  
 **Natureza:** Documento de engenharia bloqueante  
 **Base normativa:** Documentos de especificação 00 a 28
