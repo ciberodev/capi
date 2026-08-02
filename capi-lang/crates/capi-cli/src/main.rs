@@ -25,6 +25,17 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> DriverRequest {
         [] => DriverRequest::Help,
         [flag] if flag == "--help" || flag == "-h" => DriverRequest::Help,
         [flag] if flag == "--version" || flag == "-V" => DriverRequest::Version,
+        [flag, kind, path] if flag == "--emit" && kind == "tokens" => DriverRequest::EmitTokens {
+            path: PathBuf::from(path),
+        },
+        [flag, kind, _, extra, ..] if flag == "--emit" && kind == "tokens" => {
+            DriverRequest::InvalidArguments {
+                message: format!("unexpected argument '{extra}'"),
+            }
+        }
+        [flag, kind, ..] if flag == "--emit" => DriverRequest::InvalidArguments {
+            message: format!("unsupported emit kind '{kind}'"),
+        },
         [flag] if flag.starts_with('-') => DriverRequest::InvalidArguments {
             message: format!("unknown option '{flag}'"),
         },

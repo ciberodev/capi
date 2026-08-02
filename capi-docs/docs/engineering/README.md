@@ -5,10 +5,11 @@ Linguagem Capi.
 
 Ela traduz a especificação da linguagem em decisões operacionais de projeto:
 arquitetura, workspace, build, desenvolvimento, testes, planejamento,
-dependências, estilo de código e critérios de conclusão.
+dependências, estilo de código, fases do compilador e critérios de conclusão.
 
 Documentos nesta área não redefinem a semântica da linguagem. Quando houver
-conflito, prevalecem a especificação normativa e as ADRs aprovadas.
+conflito, prevalecem a especificação normativa, as ADRs aprovadas e os
+documentos bloqueantes do stage atual.
 
 ---
 
@@ -28,11 +29,14 @@ conflito, prevalecem a especificação normativa e as ADRs aprovadas.
 | --- | --- | --- |
 | `architecture/` | Ativa | Arquitetura do compilador, workspace, componentes, dependências e pipeline de compilação. |
 | `build-and-ci/` | Ativa | Sistema de build, comandos canônicos, scripts, CI, artefatos e validação automatizada. |
+| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, frontend léxico e fases futuras. |
 | `development/` | Ativa | Ambiente local, build a partir do código-fonte, padrões de código e guia de estilo Rust. |
 | `planning/` | Ativa | Definition of Done, registro de progresso do Stage 0 e documentos futuros de planejamento. |
-| `testing/` | Ativa | Estratégia oficial de testes e categorias futuras da suíte. |
+| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0 e testes léxicos obrigatórios do Stage 1. |
 
-Essas áreas possuem pelo menos um documento preenchido e aprovado no Stage 0.
+Essas áreas possuem documentação preenchida e fazem parte da implementação
+ativa. Os documentos obrigatórios do Stage 1 estão aprovados e servem como
+contrato operacional para o frontend léxico inicial.
 
 ---
 
@@ -42,7 +46,6 @@ Essas áreas possuem pelo menos um documento preenchido e aprovado no Stage 0.
 | --- | --- |
 | `abi/` | Documentar ABI, layout de dados, convenções de chamada, FFI, mangling e visibilidade de símbolos. |
 | `ai-assisted-development/` | Definir regras para contribuição assistida por IA, revisão, proveniência e rastreabilidade. |
-| `compiler/` | Consolidar documentação específica das fases do compilador quando lexer, parser, IR e verificadores amadurecerem. |
 | `observability/` | Definir logging, tracing, dumps, crash reporting e política de telemetria. |
 | `performance/` | Definir metas, benchmarks, ambiente de medição e política de regressão de performance. |
 | `release/` | Definir versionamento, canais, checklist, changelog, compatibilidade e assinatura de artefatos. |
@@ -56,7 +59,9 @@ obrigações normativas próprias.
 
 ---
 
-## Estado do Stage 0
+## Estado dos stages
+
+### Stage 0
 
 O Stage 0 estabeleceu a fundação da implementação oficial.
 
@@ -78,11 +83,38 @@ O registro formal fica em:
 planning/FEATURE-STATUS.md
 ```
 
+### Stage 1
+
+O Stage 1 iniciou a infraestrutura real do compilador.
+
+Resultados registrados:
+
+* documentos de fontes preenchidos em `compiler/source/`;
+* documentos de frontend léxico preenchidos em `compiler/frontend/`;
+* documentos de diagnósticos preenchidos em `compiler/diagnostics/`;
+* documento de testes léxicos preenchido em `testing/LEXER-TESTS.md`;
+* crates `capi-source`, `capi-diagnostics` e `capi-lexer` consolidados;
+* `SourceId`, `SourceFile`, `SourceMap`, `Span`, linha e coluna implementados;
+* modelo de tokens implementado;
+* lexer do subconjunto inicial implementado;
+* identificadores, keywords, literais, operadores, delimitadores e comentários
+  reconhecidos;
+* erros léxicos estruturados implementados;
+* dump de tokens disponível via `capic --emit tokens arquivo.capi`;
+* fixtures e snapshots léxicos criados;
+* critérios de conclusão do Stage 1 validados por testes.
+
+O resultado demonstrável é:
+
+```bash
+capic --emit tokens arquivo.capi
+```
+
 ---
 
 ## Ordem de leitura recomendada
 
-Para entender a engenharia do projeto a partir do Stage 0, leia nesta ordem:
+Para entender a engenharia do projeto a partir do Stage 1, leia nesta ordem:
 
 1. `ENGINEERING-PRINCIPLES.md`
 2. `PROJECT-STRUCTURE.md`
@@ -90,13 +122,15 @@ Para entender a engenharia do projeto a partir do Stage 0, leia nesta ordem:
 4. `architecture/README.md`
 5. `development/README.md`
 6. `build-and-ci/README.md`
-7. `testing/README.md`
-8. `planning/README.md`
-9. `../adr/README.md`
-10. `../specification/README.md`
+7. `compiler/README.md`
+8. `testing/README.md`
+9. `planning/README.md`
+10. `../adr/README.md`
+11. `../specification/README.md`
 
 Essa ordem começa pelos princípios, passa pela estrutura e depois conecta
-arquitetura, operação, testes, planejamento, decisões e especificação.
+arquitetura, operação, compilador, testes, planejamento, decisões e
+especificação.
 
 ---
 
@@ -130,6 +164,44 @@ planning/FEATURE-STATUS.md
 
 ---
 
+## Documentos ativos do Stage 1
+
+O Stage 1 usa os seguintes documentos de engenharia do compilador:
+
+```text
+compiler/source/SOURCE-MODEL.md
+compiler/source/SOURCE-MAP.md
+compiler/source/SPANS-AND-LOCATIONS.md
+compiler/source/UNICODE-AND-ENCODING.md
+compiler/frontend/TOKEN-MODEL.md
+compiler/frontend/LEXER-IMPLEMENTATION.md
+compiler/diagnostics/DIAGNOSTIC-DATA-MODEL.md
+compiler/diagnostics/DIAGNOSTIC-ARCHITECTURE.md
+compiler/diagnostics/DIAGNOSTIC-STYLE-GUIDE.md
+testing/LEXER-TESTS.md
+```
+
+Esses documentos estão em status `Aprovado` e descrevem a implementação e os
+testes entregues para o frontend léxico inicial.
+
+---
+
+## Comandos canônicos atuais
+
+Execute a partir de `../../capi-lang/`:
+
+```bash
+cargo fmt --all --check
+cargo test --workspace
+cargo clippy --workspace --all-targets
+cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
+```
+
+Esses comandos validam a implementação atual do workspace, incluindo os critérios
+obrigatórios do Stage 1.
+
+---
+
 ## Relação com a implementação
 
 A implementação oficial vive em:
@@ -138,7 +210,7 @@ A implementação oficial vive em:
 ../../capi-lang/
 ```
 
-No Stage 0, a documentação de engenharia deve permanecer sincronizada com:
+A documentação de engenharia deve permanecer sincronizada com:
 
 ```text
 ../../capi-lang/Cargo.toml
@@ -146,12 +218,19 @@ No Stage 0, a documentação de engenharia deve permanecer sincronizada com:
 ../../capi-lang/DEPENDENCIES.md
 ../../capi-lang/TOOLCHAIN.md
 ../../capi-lang/README.md
+../../capi-lang/crates/capi-source/
+../../capi-lang/crates/capi-diagnostics/
+../../capi-lang/crates/capi-lexer/
+../../capi-lang/crates/capi-driver/
+../../capi-lang/crates/capi-cli/
+../../capi-lang/tests/lexer/
 ../../.github/workflows/capi-lang-ci.yml
 ```
 
-Mudanças estruturais no workspace, dependências, toolchain, CI ou crates
-fundamentais devem ser refletidas nos documentos de engenharia e, quando forem
-decisões arquiteturais, nas ADRs correspondentes.
+Mudanças estruturais no workspace, dependências, toolchain, CI, crates
+fundamentais, frontend léxico ou layout de testes devem ser refletidas nos
+documentos de engenharia e, quando forem decisões arquiteturais, nas ADRs
+correspondentes.
 
 ---
 

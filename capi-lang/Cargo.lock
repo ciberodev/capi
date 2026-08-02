@@ -18,6 +18,7 @@ name = "capi-diagnostics"
 version = "0.0.0"
 dependencies = [
  "capi-common",
+ "capi-source",
 ]
 
 [[package]]
@@ -26,7 +27,17 @@ version = "0.0.0"
 dependencies = [
  "capi-common",
  "capi-diagnostics",
+ "capi-lexer",
  "capi-session",
+ "capi-source",
+]
+
+[[package]]
+name = "capi-lexer"
+version = "0.0.0"
+dependencies = [
+ "capi-diagnostics",
+ "capi-source",
 ]
 
 [[package]]

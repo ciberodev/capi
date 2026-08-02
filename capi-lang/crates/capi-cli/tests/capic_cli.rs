@@ -22,7 +22,7 @@ fn help_prints_usage() {
     assert!(output.status.success());
     assert_eq!(
         stdout(&output),
-        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic <source-file>\n"
+        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic arquivo.capi\n"
     );
     assert!(stderr(&output).is_empty());
 }
@@ -83,4 +83,34 @@ fn extra_argument_reports_invalid_argument() {
     assert!(!output.status.success());
     assert!(stdout(&output).is_empty());
     assert!(stderr.contains("error: unexpected argument 'extra.capi'"));
+}
+
+#[test]
+fn emit_tokens_prints_token_dump() {
+    let path = std::env::temp_dir().join("capic-cli-emit-tokens.cap");
+    std::fs::write(&path, "let value = 1;").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "tokens", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout.contains("Keyword(Let)"));
+    assert!(stdout.contains("Identifier"));
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn emit_tokens_returns_failure_for_lexical_error() {
+    let path = std::env::temp_dir().join("capic-cli-lexical-fail.cap");
+    std::fs::write(&path, "let value = $;").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "tokens", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("error[LEX0001]: invalid character in source file"));
+    assert!(stderr.contains(":1:13"));
 }

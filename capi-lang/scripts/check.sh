@@ -14,6 +14,7 @@ scripts/doc.sh
 
 cargo run -p capi-cli --locked -- --help
 cargo run -p capi-cli --locked -- --version
+cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 
 set +e
 output="$(cargo run -p capi-cli --locked -- does-not-exist.capi 2>&1)"

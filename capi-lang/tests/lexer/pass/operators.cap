@@ -1,0 +1,2 @@
+let same = left === right;
+let ok = count >= 1 && enabled || fallback;

@@ -1,0 +1,6 @@
+0    Keyword(Let) tests/lexer/pass/basic.cap:1:1..1:4 "let"
+1    Identifier tests/lexer/pass/basic.cap:1:5..1:10 "value"
+2    Operator(Equal) tests/lexer/pass/basic.cap:1:11..1:12 "="
+3    Literal(Integer) tests/lexer/pass/basic.cap:1:13..1:14 "1"
+4    Delimiter(Semicolon) tests/lexer/pass/basic.cap:1:14..1:15 ";"
+5    Eof tests/lexer/pass/basic.cap:2:1..2:1

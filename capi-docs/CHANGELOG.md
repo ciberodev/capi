@@ -8,6 +8,51 @@ quando houver política de release ou changelog específico.
 
 ---
 
+## 2026-08-02 — Consolidação documental do Stage 1
+
+### Adicionado
+
+* Documentos de fontes do compilador:
+  * `docs/engineering/compiler/source/SOURCE-MODEL.md`;
+  * `docs/engineering/compiler/source/SOURCE-MAP.md`;
+  * `docs/engineering/compiler/source/SPANS-AND-LOCATIONS.md`;
+  * `docs/engineering/compiler/source/UNICODE-AND-ENCODING.md`.
+* Documentos de frontend léxico:
+  * `docs/engineering/compiler/frontend/TOKEN-MODEL.md`;
+  * `docs/engineering/compiler/frontend/LEXER-IMPLEMENTATION.md`.
+* Documentos de diagnósticos:
+  * `docs/engineering/compiler/diagnostics/DIAGNOSTIC-DATA-MODEL.md`;
+  * `docs/engineering/compiler/diagnostics/DIAGNOSTIC-ARCHITECTURE.md`;
+  * `docs/engineering/compiler/diagnostics/DIAGNOSTIC-STYLE-GUIDE.md`.
+* Documento de testes léxicos:
+  * `docs/engineering/testing/LEXER-TESTS.md`.
+
+### Atualizado
+
+* `docs/README.md` para registrar o Stage 1, a rota de leitura do compilador e o resultado demonstrável `capic --emit tokens arquivo.capi`.
+* `docs/engineering/README.md` para marcar `compiler/` como subárea ativa e registrar os documentos ativos do Stage 1.
+* `docs/engineering/compiler/README.md` como índice operacional do compilador.
+* `docs/engineering/testing/README.md` para promover `LEXER-TESTS.md` a documento ativo do Stage 1.
+* `README.md` da raiz de `capi-docs` para refletir a nova documentação e a relação com os crates do compilador em `capi-lang`.
+* Status dos documentos obrigatórios do Stage 1 de `Proposto` para `Aprovado`.
+
+### Registrado
+
+* Critérios de conclusão do Stage 1:
+  * arquivos válidos são lidos corretamente;
+  * posições de erro são precisas;
+  * todos os tokens do subconjunto inicial são reconhecidos;
+  * entradas inválidas produzem diagnósticos estruturados;
+  * não há pânico em entradas malformadas;
+  * todos os testes obrigatórios passam.
+* Resultado demonstrável do frontend léxico:
+
+```bash
+capic --emit tokens arquivo.capi
+```
+
+---
+
 ## 2026-07-30 — Consolidação documental do Stage 0
 
 ### Adicionado

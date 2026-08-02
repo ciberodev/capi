@@ -3,8 +3,10 @@
 use std::path::PathBuf;
 
 use capi_common::{ExitStatus, CAPI_VERSION};
-use capi_diagnostics::Diagnostic;
+use capi_diagnostics::{Diagnostic, DiagnosticBag, DiagnosticCode, DiagnosticRenderer};
+use capi_lexer::{lex, Token, TokenKind};
 use capi_session::{CompilationSession, SessionOptions};
+use capi_source::SourceMap;
 
 /// Request accepted by the compiler driver.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -19,6 +21,8 @@ pub enum DriverRequest {
     InvalidArguments { message: String },
     /// Check that a source file can be loaded.
     CheckSource { path: PathBuf },
+    /// Emit tokens for a source file.
+    EmitTokens { path: PathBuf },
 }
 
 /// Structured response produced by the driver.
@@ -100,6 +104,7 @@ pub fn run(request: DriverRequest) -> DriverResponse {
                 }
             }
         }
+        DriverRequest::EmitTokens { path } => emit_tokens(path),
     }
 }
 
@@ -109,7 +114,94 @@ pub fn initialize_session() -> CompilationSession {
 }
 
 fn help_text() -> &'static str {
-    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic <source-file>\n"
+    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic arquivo.capi\n"
+}
+
+fn emit_tokens(path: PathBuf) -> DriverResponse {
+    let mut session = initialize_session();
+    let source = match session.sources_mut().load_file(&path) {
+        Ok(source) => source,
+        Err(error) => {
+            let diagnostic =
+                Diagnostic::error(error.to_string()).with_code(DiagnosticCode::source(1));
+            session.diagnostics_mut().push(diagnostic);
+            return DriverResponse::failure(format!("error: {error}\n"));
+        }
+    };
+
+    let Some(file) = session.sources().get(source) else {
+        return DriverResponse::internal_error(
+            "internal compiler error: loaded source is missing\n",
+        );
+    };
+    let output = lex(source, file.text());
+    let (tokens, diagnostics) = output.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+
+    let stderr = render_diagnostics(session.diagnostics(), session.sources());
+    let stdout = dump_tokens(&tokens, session.sources());
+
+    if session.diagnostics().has_internal_errors() {
+        DriverResponse::internal_error(stderr)
+    } else if session.diagnostics().has_errors() {
+        DriverResponse::failure(stderr)
+    } else {
+        DriverResponse::success(stdout)
+    }
+}
+
+fn render_diagnostics(diagnostics: &DiagnosticBag, sources: &SourceMap) -> String {
+    DiagnosticRenderer.render_bag(diagnostics, sources)
+}
+
+fn dump_tokens(tokens: &[Token], sources: &SourceMap) -> String {
+    let mut output = String::new();
+
+    for (index, token) in tokens.iter().enumerate() {
+        let span = token.span();
+        let location = sources.location(span.source(), span.start());
+        let end = sources.location(span.source(), span.end());
+        let lexeme = match token.kind() {
+            TokenKind::Eof => String::new(),
+            _ => sources
+                .span_text(span)
+                .map(escape_lexeme)
+                .unwrap_or_else(|| "<unavailable>".to_string()),
+        };
+
+        if let (Some(start), Some(end)) = (location, end) {
+            let file = sources
+                .get(span.source())
+                .map(|file| file.path().display().to_string())
+                .unwrap_or_else(|| "<unknown>".to_string());
+            if lexeme.is_empty() {
+                output.push_str(&format!(
+                    "{index:<4} {:?} {file}:{}:{}..{}:{}\n",
+                    token.kind(),
+                    start.line(),
+                    start.column(),
+                    end.line(),
+                    end.column()
+                ));
+            } else {
+                output.push_str(&format!(
+                    "{index:<4} {:?} {file}:{}:{}..{}:{} \"{}\"\n",
+                    token.kind(),
+                    start.line(),
+                    start.column(),
+                    end.line(),
+                    end.column(),
+                    lexeme
+                ));
+            }
+        }
+    }
+
+    output
+}
+
+fn escape_lexeme(lexeme: &str) -> String {
+    lexeme.escape_default().to_string()
 }
 
 #[cfg(test)]
@@ -123,6 +215,35 @@ mod tests {
         assert_eq!(response.status(), ExitStatus::Success);
         assert!(response.stdout().starts_with("capic "));
         assert!(response.stderr().is_empty());
+    }
+
+    #[test]
+    fn emits_tokens_for_source_text() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-tokens.cap");
+        std::fs::write(&temp, "let value = 1;").expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitTokens { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Success);
+        assert!(response.stdout().contains("Keyword(Let)"));
+        assert!(response.stdout().contains("Identifier"));
+        assert!(response.stderr().is_empty());
+    }
+
+    #[test]
+    fn emit_tokens_fails_on_lexical_error() {
+        let temp = std::env::temp_dir().join("capi-driver-lexical-fail.cap");
+        std::fs::write(&temp, "let value = $;").expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitTokens { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Failure);
+        assert!(response.stdout().is_empty());
+        assert!(response
+            .stderr()
+            .contains("error[LEX0001]: invalid character in source file"));
     }
 
     #[test]

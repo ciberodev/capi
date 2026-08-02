@@ -1,27 +1,32 @@
 # Dependency Policy
 
-This file records the initial dependency policy for the official Capi implementation.
+This file records the dependency policy for the official Capi implementation.
 
 The authoritative engineering rules live in:
 
 - `capi-docs/docs/engineering/architecture/DEPENDENCY-RULES.md`
 - `capi-docs/docs/adr/ADR-0013 — Política de Dependências Externas.md`
 
-## Stage 0 Policy
+## Current Policy
 
-Stage 0 starts with no external Rust crate dependencies.
+Stage 1 continues with no external Rust crate dependencies.
 
-Allowed dependencies are only workspace path dependencies between the initial Capi crates:
+Allowed dependencies are only workspace path dependencies between Capi crates:
 
 ```text
 capi-cli -> capi-driver
 capi-driver -> capi-common
 capi-driver -> capi-diagnostics
+capi-driver -> capi-lexer
 capi-driver -> capi-session
+capi-driver -> capi-source
 capi-session -> capi-diagnostics
 capi-session -> capi-source
 capi-source -> capi-common
 capi-diagnostics -> capi-common
+capi-diagnostics -> capi-source
+capi-lexer -> capi-diagnostics
+capi-lexer -> capi-source
 ```
 
 The lockfile must remain versioned:
@@ -53,7 +58,7 @@ Examples include compiler backends, snapshot frameworks that define public outpu
 
 ## Validation
 
-The Stage 0 dependency check is:
+The dependency check is:
 
 ```bash
 scripts/deps.sh

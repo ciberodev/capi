@@ -1,0 +1,5 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "capi-lang/Cargo.toml"
+  ]
+}

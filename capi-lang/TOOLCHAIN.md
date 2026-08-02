@@ -1,8 +1,10 @@
 # Toolchain Policy
 
-This file records the initial minimum tool versions for the official Capi implementation.
+This file records the minimum tool versions for the official Capi implementation.
 
-The Stage 0 policy is intentionally narrow: the Rust workspace must build, test, lint, format, and generate Rust API documentation with the pinned Rust toolchain.
+The current policy remains intentionally narrow: the Rust workspace must build,
+test, lint, format, and generate Rust API documentation with the pinned Rust
+toolchain. Stage 1 did not change the MSRV or pinned tool versions.
 
 ## Minimum Versions
 

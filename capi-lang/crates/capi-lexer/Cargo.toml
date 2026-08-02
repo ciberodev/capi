@@ -1,5 +1,5 @@
 [package]
-name = "capi-diagnostics"
+name = "capi-lexer"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-capi-common.workspace = true
+capi-diagnostics.workspace = true
 capi-source.workspace = true
 
 [lints]

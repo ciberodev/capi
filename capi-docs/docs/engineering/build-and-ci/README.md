@@ -56,7 +56,8 @@ A implementação inicial inclui:
 * scripts locais de desenvolvimento;
 * workflow de CI em `.github/workflows/capi-lang-ci.yml`;
 * documentação Rust gerada por `cargo doc`;
-* validação de `capic --help`, `capic --version` e erro para arquivo inexistente.
+* validação de `capic --help`, `capic --version`, dump de tokens e erro para
+  arquivo inexistente.
 
 ---
 
@@ -72,10 +73,11 @@ cargo test --workspace --locked
 cargo doc --workspace --no-deps --locked
 cargo run -p capi-cli --locked -- --help
 cargo run -p capi-cli --locked -- --version
+cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 ```
 
-Esses comandos formam a validação mínima do Stage 0 para build, estilo, lint,
-testes, documentação Rust e smoke tests do executável `capic`.
+Esses comandos formam a validação mínima atual para build, estilo, lint, testes,
+documentação Rust e smoke tests do executável `capic`.
 
 ---
 
@@ -101,7 +103,7 @@ Regra prática:
 
 * use `scripts/check.sh` para validação local de rotina;
 * use `scripts/ci-local.sh` para reproduzir localmente o conjunto esperado pela
-  CI do Stage 0;
+  CI;
 * mantenha os scripts como encapsulamento de comandos explícitos, sem substituir
   a documentação dos comandos Cargo canônicos.
 
@@ -156,9 +158,9 @@ em fonte normativa do projeto.
 
 ---
 
-## Relação com o Stage 0
+## Relação com os stages
 
-Para o Stage 0, esta área de documentação sustenta os seguintes critérios de
+Para o Stage 0, esta área de documentação sustentou os seguintes critérios de
 conclusão:
 
 * o workspace compila sem erros;
@@ -170,6 +172,13 @@ conclusão:
 * a CI está operacional;
 * as dependências respeitam as regras definidas;
 * existe validação local equivalente à CI.
+
+Para o Stage 1, a CI também valida:
+
+* crates `capi-source`, `capi-diagnostics` e `capi-lexer`;
+* testes obrigatórios de fonte, spans, Unicode, tokens e diagnósticos;
+* fixtures e snapshots léxicos;
+* smoke test de `capic --emit tokens`.
 
 O registro formal de progresso do Stage 0 fica em:
 

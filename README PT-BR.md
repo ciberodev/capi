@@ -12,13 +12,19 @@ A linguagem não tenta adaptar o modelo de ownership do Rust à programação or
 
 ## Estado do Repositório
 
-Capi está atualmente no encerramento do **Stage 0 - Fundação do Projeto** da implementação oficial.
+Capi está atualmente no **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** da implementação oficial.
 
-O repositório contém a especificação da linguagem, a especificação de implementação, decisões arquiteturais, documentação de engenharia e o workspace Rust inicial da implementação oficial.
+O repositório contém a especificação da linguagem, a especificação da implementação, decisões arquiteturais, documentação de engenharia e o workspace Rust inicial da implementação oficial.
 
-Existe um executável mínimo `capic` em `capi-lang/`. Ele suporta os comandos de Stage 0 `--help`, `--version`, validação de argumentos, erros de carregamento de arquivo fonte, inicialização de sessão e tratamento básico de erros internos. Ele ainda não compila programas Capi.
+Existe um executável `capic` em `capi-lang/`. Ele suporta `--help`, `--version`, validação de argumentos, erros de carregamento de arquivo fonte, inicialização de sessão, tratamento básico de erros internos e o comando de dump de tokens do Stage 1:
 
-O pacote de documentação também foi consolidado com índices de topo, changelog, documentos de engenharia aprovados do Stage 0 e o registro formal de progresso do Stage 0.
+```bash
+capic --emit tokens arquivo.capi
+```
+
+Ele ainda não compila programas Capi.
+
+O pacote de documentação foi consolidado com índices de topo, changelog, documentos de engenharia aprovados do Stage 0 e do Stage 1, e o registro formal de progresso do Stage 0.
 
 ## Fase Atual
 
@@ -33,6 +39,17 @@ O Stage 0 criou:
 - as regras iniciais de engenharia que orientam o desenvolvimento.
 
 Os documentos de engenharia e ADRs exigidos para o Stage 0 foram aprovados na documentação do projeto.
+
+O **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** entregou:
+
+- gerenciamento de fontes com `SourceId`, `SourceFile`, `SourceMap`, `Span` e consulta de linha e coluna;
+- diagnósticos estruturados com códigos, labels, notas, sugestões e renderização;
+- o modelo inicial de tokens;
+- o lexer inicial para identificadores, keywords, literais, operadores, delimitadores, comentários, EOF e erros léxicos;
+- suporte a dump de tokens por meio de `capic --emit tokens`;
+- fixtures do lexer, snapshots, testes léxicos compile-fail, testes de posição de diagnósticos e testes de robustez contra entradas malformadas.
+
+Os documentos de engenharia exigidos para o Stage 1 foram aprovados na documentação do projeto.
 
 O registro formal de progresso é:
 
@@ -80,6 +97,7 @@ Os índices de engenharia atualmente ativos são:
 
 - [`Arquitetura`](capi-docs/docs/engineering/architecture/README.md)
 - [`Build e CI`](capi-docs/docs/engineering/build-and-ci/README.md)
+- [`Compilador`](capi-docs/docs/engineering/compiler/README.md)
 - [`Desenvolvimento`](capi-docs/docs/engineering/development/README.md)
 - [`Testes`](capi-docs/docs/engineering/testing/README.md)
 - [`Planejamento`](capi-docs/docs/engineering/planning/README.md)
@@ -88,18 +106,19 @@ Os índices de engenharia atualmente ativos são:
 
 A implementação oficial é planejada como um compilador e uma toolchain baseados em Rust, inicialmente construídos com um workspace Cargo.
 
-Os crates atuais do workspace no Stage 0 são:
+Os crates atuais do workspace são:
 
-- `capi-cli` - executável mínimo `capic`;
-- `capi-driver` - driver inicial do compilador;
+- `capi-cli` - executável `capic` e parsing de argumentos;
+- `capi-driver` - orquestração do driver do compilador e saída de dump de tokens;
+- `capi-common` - tipos e constantes fundamentais compartilhados;
 - `capi-session` - configuração da sessão de compilação;
-- `capi-diagnostics` - infraestrutura básica de diagnósticos;
-- `capi-source` - infraestrutura de carregamento de arquivos fonte;
-- `capi-common` - tipos fundamentais compartilhados.
+- `capi-source` - carregamento de arquivos fonte, source maps, spans e consulta de linha e coluna;
+- `capi-diagnostics` - infraestrutura de diagnósticos estruturados;
+- `capi-lexer` - modelo de tokens e lexer inicial.
 
 O workspace atualmente não possui dependências externas de crates Rust. A política de dependências está registrada em [`capi-lang/DEPENDENCIES.md`](capi-lang/DEPENDENCIES.md).
 
-A política inicial da toolchain Rust está registrada em [`capi-lang/TOOLCHAIN.md`](capi-lang/TOOLCHAIN.md). O Stage 0 fixa Rust `1.88.0`.
+A política da toolchain Rust está registrada em [`capi-lang/TOOLCHAIN.md`](capi-lang/TOOLCHAIN.md). O workspace fixa Rust `1.88.0`.
 
 A arquitetura planejada do compilador separa:
 
@@ -134,15 +153,16 @@ Neste momento, o repositório possui:
 - um conjunto completo de especificação da linguagem, dos documentos `00` a `12`;
 - um conjunto de especificação de implementação, dos documentos `13` a `28`;
 - ADRs aprovadas do Stage 0 para decisões centrais de implementação;
-- documentos de engenharia do Stage 0 aprovados;
-- índices de documentação para `capi-docs`, `docs`, ADRs, engenharia, arquitetura, build/CI, desenvolvimento, testes e planejamento;
+- documentos de engenharia aprovados do Stage 0 e do Stage 1;
+- índices de documentação para `capi-docs`, `docs`, ADRs, engenharia, compilador, arquitetura, build/CI, desenvolvimento, testes e planejamento;
 - um changelog de `capi-docs`;
 - um workspace Cargo Rust em `capi-lang`;
-- os crates fundamentais do Stage 0;
-- um executável mínimo `capic`;
-- scripts de validação local e configuração de workflow de CI.
+- os crates fundamentais do compilador mais os crates iniciais de fontes, diagnósticos e lexer;
+- um executável `capic` com suporte a dump de tokens do Stage 1;
+- scripts de validação local e configuração de workflow de CI;
+- fixtures do lexer e testes de snapshot.
 
-O conjunto de validação local do Stage 0 inclui:
+O conjunto atual de validação local inclui:
 
 ```bash
 cd capi-lang
@@ -152,10 +172,11 @@ cargo clippy --workspace --all-targets --locked
 cargo test --workspace --locked
 cargo run -p capi-cli --locked -- --help
 cargo run -p capi-cli --locked -- --version
+cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 scripts/ci-local.sh
 ```
 
-O workflow de CI está versionado em [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). A execução remota da CI depende de um evento de `push` ou `pull_request`, enquanto a validação local equivalente passou para o Stage 0.
+O workflow de CI está versionado em [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). A execução remota da CI depende de um evento de `push` ou `pull_request`, enquanto a validação local equivalente passou para o Stage 1.
 
 ## O Que Ainda Não Está Pronto
 
@@ -170,7 +191,7 @@ O repositório ainda não fornece:
 
 ## Roadmap Imediato
 
-O próximo passo imediato é iniciar o stage seguinte definido pelo Documento 28, usando a fundação criada no Stage 0.
+O próximo passo imediato é continuar com o próximo trabalho de frontend definido pelo Documento 28, usando como base a fundação de fontes, diagnósticos e lexer do Stage 1.
 
 ## Nota do Projeto
 

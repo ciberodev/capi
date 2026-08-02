@@ -9,7 +9,9 @@ repository.workspace = true
 [dependencies]
 capi-common.workspace = true
 capi-diagnostics.workspace = true
+capi-lexer.workspace = true
 capi-session.workspace = true
+capi-source.workspace = true
 
 [lints]
 workspace = true
