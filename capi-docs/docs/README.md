@@ -18,7 +18,7 @@ A documentação está organizada para separar:
 | Pasta | Estado | Finalidade |
 | --- | --- | --- |
 | `specification/` | Ativa | Contém a especificação da linguagem Capi e a especificação de referência da implementação oficial. |
-| `adr/` | Ativa | Contém Architecture Decision Records, incluindo as ADRs aprovadas para o Stage 0. |
+| `adr/` | Ativa | Contém Architecture Decision Records, incluindo as ADRs aprovadas para a fundação da implementação oficial. |
 | `engineering/` | Ativa | Contém documentos de engenharia para arquitetura, workspace, build, desenvolvimento, testes, planejamento e fases do compilador da implementação oficial. |
 | `templates/` | Suporte | Contém modelos para ADRs, RFCs, tarefas, issues, pull requests, testes, releases e avisos de segurança. |
 | `governance/` | Reservada | Área para políticas de governança do projeto quando forem formalizadas. |
@@ -28,7 +28,7 @@ A documentação está organizada para separar:
 
 ## Estado atual
 
-O Stage 0 da implementação oficial está concluído e registrado em:
+Os Stages 0, 1 e 2 da implementação oficial estão concluídos e registrados em:
 
 ```text
 engineering/planning/FEATURE-STATUS.md
@@ -58,6 +58,29 @@ O Stage 1 iniciou a infraestrutura real do compilador e entregou:
 * dump de tokens via `capic --emit tokens arquivo.capi`;
 * critérios de conclusão do Stage 1 validados por testes.
 
+O Stage 2 implementou o frontend sintático inicial e entregou:
+
+* documentação de AST, parser, recuperação sintática e lowering;
+* documentação dos testes sintáticos obrigatórios;
+* crates `capi-ast` e `capi-parser`;
+* AST com spans;
+* parser de módulos, imports, declarações, classes, funções, tipos, comandos e
+  expressões;
+* precedência de operadores;
+* diagnósticos sintáticos estruturados;
+* recuperação de erros recuperáveis;
+* AST parcial com nós de erro;
+* dump determinístico da AST;
+* snapshots golden de dump da AST;
+* dump de AST via `capic --emit ast arquivo.capi`;
+* critérios de conclusão do Stage 2 validados por testes.
+
+O próximo stage planejado é:
+
+```text
+Stage 3 — HIR e resolução de nomes
+```
+
 ---
 
 ## Ordem de leitura recomendada
@@ -68,20 +91,20 @@ Para entender o projeto a partir da documentação, leia nesta ordem:
 2. `specification/implementation/28 — Plano de Desenvolvimento da Implementação Oficial.md`
 3. `adr/README.md`
 4. `engineering/README.md`
-5. `engineering/compiler/README.md`
-6. `engineering/testing/README.md`
-7. `engineering/planning/FEATURE-STATUS.md`
+5. `engineering/planning/README.md`
+6. `engineering/compiler/README.md`
+7. `engineering/testing/README.md`
 
 Para contribuir com implementação, depois leia:
 
 1. `engineering/architecture/README.md`
 2. `engineering/development/README.md`
 3. `engineering/build-and-ci/README.md`
-4. `engineering/compiler/README.md`
-5. `engineering/testing/README.md`
-6. `engineering/planning/README.md`
+4. `engineering/planning/README.md`
+5. `engineering/compiler/README.md`
+6. `engineering/testing/README.md`
 
-Para trabalhar especificamente no Stage 1 do compilador, leia:
+Para entender o frontend inicial entregue nos Stages 1 e 2, leia:
 
 1. `engineering/compiler/source/SOURCE-MODEL.md`
 2. `engineering/compiler/source/SOURCE-MAP.md`
@@ -93,6 +116,22 @@ Para trabalhar especificamente no Stage 1 do compilador, leia:
 8. `engineering/compiler/frontend/TOKEN-MODEL.md`
 9. `engineering/compiler/frontend/LEXER-IMPLEMENTATION.md`
 10. `engineering/testing/LEXER-TESTS.md`
+11. `engineering/compiler/frontend/AST-MODEL.md`
+12. `engineering/compiler/frontend/PARSER-IMPLEMENTATION.md`
+13. `engineering/compiler/frontend/PARSER-RECOVERY.md`
+14. `engineering/compiler/frontend/AST-LOWERING.md`
+15. `engineering/testing/PARSER-TESTS.md`
+
+Para iniciar o próximo stage planejado, comece por:
+
+1. `engineering/planning/IMPLEMENTATION-ORDER.md`
+2. `engineering/planning/MILESTONES.md`
+3. `engineering/planning/ROADMAP.md`
+4. `engineering/compiler/semantic/HIR-MODEL.md`
+5. `engineering/compiler/semantic/SYMBOL-MODEL.md`
+6. `engineering/compiler/semantic/SCOPE-MODEL.md`
+7. `engineering/compiler/semantic/NAME-RESOLUTION.md`
+8. `engineering/testing/SEMANTIC-TESTS.md`
 
 ---
 
@@ -104,7 +143,10 @@ A documentação segue uma hierarquia prática:
 2. `adr/` registra decisões arquiteturais concretas;
 3. `engineering/` transforma essas decisões em regras operacionais;
 4. `../capi-lang/` contém a implementação oficial;
-5. `engineering/planning/FEATURE-STATUS.md` registra progresso formal por stage.
+5. `engineering/planning/FEATURE-STATUS.md` registra progresso formal por stage;
+6. `engineering/planning/IMPLEMENTATION-ORDER.md`, `MILESTONES.md`,
+   `ROADMAP.md`, `RISK-REGISTER.md` e `TECHNICAL-DEBT.md` registram ordem,
+   marcos, próximos passos, riscos e limitações aceitas.
 
 Documentos de engenharia não devem redefinir a semântica da linguagem. ADRs não
 devem contradizer a especificação sem registrar explicitamente a necessidade de
@@ -184,6 +226,42 @@ Resultado demonstrável:
 
 ```bash
 capic --emit tokens arquivo.capi
+```
+
+---
+
+## Documentos ativos do Stage 2
+
+Documentos de engenharia do compilador:
+
+```text
+engineering/compiler/frontend/AST-MODEL.md
+engineering/compiler/frontend/PARSER-IMPLEMENTATION.md
+engineering/compiler/frontend/PARSER-RECOVERY.md
+engineering/compiler/frontend/AST-LOWERING.md
+```
+
+Documentos de testes:
+
+```text
+engineering/testing/PARSER-TESTS.md
+```
+
+Documentos de planejamento atualizados:
+
+```text
+engineering/planning/FEATURE-STATUS.md
+engineering/planning/IMPLEMENTATION-ORDER.md
+engineering/planning/MILESTONES.md
+engineering/planning/RISK-REGISTER.md
+engineering/planning/ROADMAP.md
+engineering/planning/TECHNICAL-DEBT.md
+```
+
+Resultado demonstrável:
+
+```bash
+capic --emit ast arquivo.capi
 ```
 
 ---

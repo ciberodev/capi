@@ -8,6 +8,58 @@ quando houver política de release ou changelog específico.
 
 ---
 
+## 2026-08-02 — Consolidação documental do Stage 2
+
+### Adicionado
+
+* Documentos de frontend sintático:
+  * `docs/engineering/compiler/frontend/AST-MODEL.md`;
+  * `docs/engineering/compiler/frontend/PARSER-IMPLEMENTATION.md`;
+  * `docs/engineering/compiler/frontend/PARSER-RECOVERY.md`;
+  * `docs/engineering/compiler/frontend/AST-LOWERING.md`.
+* Documento de testes sintáticos:
+  * `docs/engineering/testing/PARSER-TESTS.md`.
+* Documentos de planejamento operacional:
+  * `docs/engineering/planning/IMPLEMENTATION-ORDER.md`;
+  * `docs/engineering/planning/MILESTONES.md`;
+  * `docs/engineering/planning/RISK-REGISTER.md`;
+  * `docs/engineering/planning/ROADMAP.md`;
+  * `docs/engineering/planning/TECHNICAL-DEBT.md`.
+
+### Atualizado
+
+* `docs/README.md` para registrar os Stages 0, 1 e 2 como concluídos, incluir a rota de leitura do Stage 2 e apontar o Stage 3 como próximo stage planejado.
+* `docs/engineering/README.md` para refletir o frontend sintático inicial, os documentos ativos do Stage 2 e os documentos de planejamento aprovados.
+* `docs/engineering/compiler/README.md` para promover AST, parser, recovery e lowering a documentos ativos do frontend.
+* `docs/engineering/testing/README.md` para promover `PARSER-TESTS.md` a documento ativo do Stage 2.
+* `docs/engineering/planning/README.md` para listar todos os documentos de planejamento como aprovados.
+* `docs/engineering/planning/FEATURE-STATUS.md` para registrar a conclusão formal do Stage 2.
+* `README.md` da raiz de `capi-docs` para refletir o Stage 2, `capic --emit ast arquivo.capi`, `capi-ast`, `capi-parser` e o próximo Stage 3.
+
+### Registrado
+
+* Critérios de conclusão do Stage 2:
+  * o subconjunto sintático inicial é aceito;
+  * entradas inválidas produzem diagnósticos sintáticos adequados;
+  * o parser continua após erros recuperáveis;
+  * a AST preserva spans;
+  * o dump da AST é determinístico;
+  * o resultado esperado pode ser obtido por `capic --emit ast arquivo.capi`;
+  * todos os testes obrigatórios passam.
+* Resultado demonstrável do frontend sintático:
+
+```bash
+capic --emit ast arquivo.capi
+```
+
+* Próximo stage planejado:
+
+```text
+Stage 3 — HIR e resolução de nomes
+```
+
+---
+
 ## 2026-08-02 — Consolidação documental do Stage 1
 
 ### Adicionado

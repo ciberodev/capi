@@ -9,40 +9,49 @@ objetivos que possam ser revisados.
 
 ---
 
-## Documentos aprovados no Stage 0
+## Documentos aprovados
 
 | Documento | Status | Natureza | Finalidade |
 | --- | --- | --- | --- |
 | `DEFINITION-OF-DONE.md` | Aprovado | Documento de engenharia bloqueante | Define o que significa uma entrega estar concluída: documentação, código, testes, infraestrutura, ADRs e encerramento de stages. |
-| `FEATURE-STATUS.md` | Aprovado | Registro de progresso | Registra o progresso formal do Stage 0, incluindo documentos aprovados, ADRs, infraestrutura, implementação, validações, pendências e riscos. |
+| `FEATURE-STATUS.md` | Aprovado | Registro de progresso | Registra o progresso formal dos stages, incluindo documentos aprovados, ADRs, infraestrutura, implementação, validações, pendências e riscos. |
+| `IMPLEMENTATION-ORDER.md` | Aprovado | Documento de planejamento derivado | Consolida a ordem operacional de implementação dos Stages 0 a 19 e aponta o próximo stage planejado. |
+| `MILESTONES.md` | Aprovado | Registro de milestones | Registra marcos demonstráveis, evidências e próximos resultados esperados por stage. |
+| `RISK-REGISTER.md` | Aprovado | Registro de riscos | Mantém riscos técnicos, operacionais e de escopo com probabilidade, impacto, status e mitigação. |
+| `ROADMAP.md` | Aprovado | Roadmap operacional | Consolida a evolução em horizontes de entrega sem substituir o Documento 28. |
+| `TECHNICAL-DEBT.md` | Aprovado | Registro de dívida técnica | Registra dívidas técnicas aceitas, itens monitorados, impacto e condição de remoção. |
 
 ---
 
 ## Documentos reservados
 
-| Documento | Finalidade esperada |
-| --- | --- |
-| `IMPLEMENTATION-ORDER.md` | Consolidar a ordem operacional de implementação quando a execução precisar ser detalhada além do Documento 28. |
-| `MILESTONES.md` | Registrar marcos demonstráveis, entregas intermediárias e evidências esperadas por milestone. |
-| `RISK-REGISTER.md` | Manter riscos técnicos, operacionais e de escopo com mitigação e status. |
-| `ROADMAP.md` | Consolidar visão de evolução entre stages sem substituir a especificação. |
-| `TECHNICAL-DEBT.md` | Registrar dívidas técnicas aceitas, motivo, impacto, prazo esperado e critério de remoção. |
+No estado atual, não há documentos reservados vazios nesta pasta.
 
-Enquanto esses documentos estiverem vazios, eles não introduzem obrigações
-próprias. As regras aplicáveis vêm de `DEFINITION-OF-DONE.md`,
-`FEATURE-STATUS.md`, do Documento 28 e das ADRs aprovadas.
+Novos documentos de planejamento só devem ser adicionados quando houver
+necessidade operacional clara que não seja coberta por `DEFINITION-OF-DONE.md`,
+`FEATURE-STATUS.md`, `IMPLEMENTATION-ORDER.md`, `MILESTONES.md`,
+`RISK-REGISTER.md`, `ROADMAP.md` ou `TECHNICAL-DEBT.md`.
 
 ---
 
-## Estado do Stage 0
+## Estado atual
 
-O Stage 0 está registrado como concluído em:
+O progresso formal dos stages está registrado em:
 
 ```text
 FEATURE-STATUS.md
 ```
 
-O registro declara:
+Estado atual:
+
+```text
+Stage 0 — Fundação do projeto: Concluído
+Stage 1 — Fontes, diagnósticos e lexer: Concluído
+Stage 2 — Parser e AST: Concluído
+Próximo stage: Stage 3 — HIR e resolução de nomes
+```
+
+O registro declara, por stage:
 
 * documentos bloqueantes aprovados;
 * documentos operacionais e de consolidação aprovados;
@@ -53,8 +62,7 @@ O registro declara:
 * pendências não bloqueantes;
 * riscos a acompanhar nos próximos stages.
 
-Esse documento é a referência formal para responder se o Stage 0 possui registro
-de progresso.
+Esse documento é a referência formal para responder o que foi concluído.
 
 ---
 
@@ -74,8 +82,9 @@ Uma entrega só deve ser considerada concluída quando puder ser:
 * rastreada até especificação, ADR ou documento de engenharia aplicável;
 * reproduzida por outra pessoa.
 
-Para o Stage 0, isso inclui build, formatação, lint, testes, smoke tests do
-`capic`, documentação, dependências e CI.
+Para os stages concluídos, isso inclui build, formatação, lint, testes, smoke
+tests do `capic`, documentação, dependências, CI e resultado demonstrável do
+stage.
 
 ---
 
@@ -88,8 +97,11 @@ Esta pasta registra a aplicação desse plano:
 
 * `DEFINITION-OF-DONE.md` define quando uma entrega está pronta;
 * `FEATURE-STATUS.md` registra o que foi concluído;
-* documentos reservados poderão detalhar roadmap, milestones, riscos e dívidas
-  técnicas quando isso passar a ser necessário.
+* `IMPLEMENTATION-ORDER.md` consolida a ordem operacional de execução;
+* `MILESTONES.md` registra marcos demonstráveis;
+* `RISK-REGISTER.md` registra riscos e mitigação;
+* `ROADMAP.md` organiza a evolução por horizontes;
+* `TECHNICAL-DEBT.md` registra dívidas aceitas e itens monitorados.
 
 O planejamento nesta pasta não deve substituir o Documento 28. Quando houver
 conflito, o plano aprovado da especificação e as ADRs aplicáveis prevalecem.
@@ -105,7 +117,10 @@ Antes de marcar uma tarefa como concluída:
 3. atualize ADRs ou documentos quando a entrega introduzir decisão nova;
 4. registre progresso em `FEATURE-STATUS.md` quando a entrega afetar o status do
    stage;
-5. registre riscos ou dívidas técnicas quando houver limitação aceita.
+5. atualize `MILESTONES.md` quando houver novo resultado demonstrável;
+6. registre riscos em `RISK-REGISTER.md`;
+7. registre dívidas técnicas em `TECHNICAL-DEBT.md` quando houver limitação
+   aceita.
 
 ---
 
@@ -115,13 +130,19 @@ Para entender o planejamento do projeto, leia nesta ordem:
 
 1. `DEFINITION-OF-DONE.md`
 2. `FEATURE-STATUS.md`
-3. `../../specification/implementation/28 — Plano de Desenvolvimento da Implementação Oficial.md`
-4. `../../adr/README.md`
-5. `../build-and-ci/README.md`
-6. `../testing/TEST-STRATEGY.md`
+3. `IMPLEMENTATION-ORDER.md`
+4. `MILESTONES.md`
+5. `ROADMAP.md`
+6. `RISK-REGISTER.md`
+7. `TECHNICAL-DEBT.md`
+8. `../../specification/implementation/28 — Plano de Desenvolvimento da Implementação Oficial.md`
+9. `../../adr/README.md`
+10. `../build-and-ci/README.md`
+11. `../testing/TEST-STRATEGY.md`
 
 Essa ordem parte dos critérios de aceite, passa pelo progresso registrado e
-conecta o planejamento às decisões arquiteturais, build e testes.
+conecta o planejamento a milestones, roadmap, riscos, dívidas, decisões
+arquiteturais, build e testes.
 
 ---
 
@@ -129,7 +150,7 @@ conecta o planejamento às decisões arquiteturais, build e testes.
 
 Atualize este README quando:
 
-* um documento reservado desta pasta for preenchido;
+* um documento desta pasta for criado, preenchido ou aprovado;
 * um stage mudar de estado;
 * novos registros formais de progresso forem adicionados;
 * os critérios de conclusão forem alterados;

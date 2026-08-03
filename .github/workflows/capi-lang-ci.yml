@@ -134,6 +134,13 @@ jobs:
           printf '%s\n' "$output" | grep "Keyword(Let)"
           printf '%s\n' "$output" | grep "Identifier"
 
+      - name: Check AST dump
+        run: |
+          output="$(cargo run -p capi-cli --bin capic --locked -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap)"
+          printf '%s\n' "$output" | grep "CompilationUnit"
+          printf '%s\n' "$output" | grep "FunctionDecl name=main"
+          printf '%s\n' "$output" | grep "ClassDecl name=Cliente"
+
       - name: Check missing source error
         run: |
           set +e

@@ -3,7 +3,7 @@
 **Projeto:** Linguagem Capi  
 **Documento:** FEATURE-STATUS  
 **Status:** Aprovado  
-**Stage:** Stages 0-1 — Fundação e frontend léxico inicial  
+**Stage:** Stages 0-2 — Fundação, frontend léxico e frontend sintático inicial  
 **Natureza:** Registro de progresso  
 **Base normativa:** Documento 28 — Plano de Desenvolvimento da Implementação Oficial
 
@@ -298,9 +298,6 @@ Nenhuma pendência bloqueante do Stage 1.
 
 Itens reservados para stages posteriores:
 
-- parser;
-- AST;
-- recuperação sintática;
 - HIR;
 - resolução de nomes;
 - checagem de tipos;
@@ -326,3 +323,210 @@ O workspace Rust lê fontes válidas, rejeita UTF-8 inválido sem panic, resolve
 spans e localizações, produz diagnósticos estruturados, reconhece todos os tokens
 do subconjunto inicial, recupera erros léxicos básicos, emite dump de tokens por
 CLI e passa todos os testes obrigatórios definidos para o stage.
+
+---
+
+## Stage 2 — Parser e AST
+
+```text
+Stage: Stage 2 — Parser e AST
+Responsável: Projeto Capi
+Data de início: 2026-08-02
+Data de conclusão: 2026-08-02
+Status: Concluído
+```
+
+### Documentos concluídos
+
+Documentos de frontend sintático aprovados:
+
+- `compiler/frontend/AST-MODEL.md`
+- `compiler/frontend/PARSER-IMPLEMENTATION.md`
+- `compiler/frontend/PARSER-RECOVERY.md`
+- `compiler/frontend/AST-LOWERING.md`
+
+Documento de testes aprovado:
+
+- `testing/PARSER-TESTS.md`
+
+READMEs e registros atualizados:
+
+- `docs/engineering/compiler/README.md`
+- `docs/engineering/testing/README.md`
+- `docs/engineering/planning/FEATURE-STATUS.md`
+
+### ADRs criados e aprovados
+
+Nenhuma ADR nova foi criada no Stage 2.
+
+As decisões do Stage 2 foram implementadas dentro das regras já aprovadas nos
+stages anteriores, especialmente:
+
+- `ADR-0001 — Rust como Linguagem da Implementação Oficial.md`
+- `ADR-0002 — Organização da Implementação em Workspace Cargo.md`
+- `ADR-0003 — Separação entre Frontend, Middle-end e Backend.md`
+- `ADR-0013 — Política de Dependências Externas.md`
+- `ADR-0015 — Estratégia Inicial de Testes.md`
+- `ADR-0016 — Organização Física do Repositório.md`
+
+### Infraestrutura concluída
+
+- crate `capi-ast` criado;
+- crate `capi-parser` criado;
+- integração de `capi-ast` e `capi-parser` ao workspace Cargo;
+- integração do parser ao `capi-driver`;
+- integração de `--emit ast` à CLI `capic`;
+- infraestrutura de testes de integração do parser criada;
+- fixtures de dump de AST criadas em `capi-parser/tests/fixtures/ast_dump/`;
+- snapshots golden de dump de AST criados;
+- testes de CLI para `capic --emit ast` adicionados.
+
+### Implementações concluídas
+
+- modelo inicial de AST implementado;
+- unidade de compilação implementada;
+- nós de módulo e imports implementados;
+- nós de declarações implementados;
+- nós de classes, interfaces, traits e membros implementados;
+- nós de funções, construtores, parâmetros e generics implementados;
+- nós de tipos sintáticos implementados;
+- nós de blocos e comandos implementados;
+- nós de expressões implementados;
+- nós de padrões implementados;
+- nós de erro sintático implementados;
+- preservação de spans em nós sintáticos relevantes implementada;
+- parser de módulos implementado;
+- parser de imports implementado;
+- parser de declarações implementado;
+- parser de classes, interfaces e traits implementado;
+- parser de funções, construtores e parâmetros implementado;
+- parser de tipos implementado;
+- parser de expressões implementado;
+- parser de comandos implementado;
+- precedência e associatividade de operadores implementadas;
+- diagnósticos sintáticos estruturados com códigos `PARSE` implementados;
+- recuperação de erros recuperáveis implementada;
+- AST parcial com nós de erro implementada;
+- dump determinístico da AST implementado;
+- emissão de AST via `capic --emit ast arquivo.capi` implementada.
+
+### Testes concluídos
+
+Validação executada em `capi-lang`:
+
+```bash
+cargo fmt --all --check
+cargo test -p capi-parser parses_declarations
+cargo test -p capi-parser parses_expressions
+cargo test -p capi-parser parses_operator_precedence
+cargo test -p capi-parser parses_types
+cargo test -p capi-parser parses_classes
+cargo test -p capi-parser reports_syntax_errors
+cargo test -p capi-parser recovers_after_syntax_errors
+cargo test -p capi-parser builds_ast_with_spans_and_dump
+cargo test --workspace
+cargo clippy --workspace --all-targets
+```
+
+Cobertura obrigatória concluída:
+
+- testes de declarações;
+- testes de expressões;
+- testes de precedência;
+- testes de tipos;
+- testes de classes;
+- testes de erros sintáticos;
+- testes de recuperação;
+- testes de AST;
+- testes de spans por nó específico;
+- testes de nós de erro;
+- testes golden de dump determinístico da AST;
+- testes de CLI para `capic --emit ast`.
+
+Critérios de conclusão verificados:
+
+- o subconjunto sintático inicial é aceito;
+- entradas inválidas produzem diagnósticos sintáticos adequados;
+- o parser continua após erros recuperáveis;
+- a AST preserva spans em nós relevantes;
+- o dump da AST é determinístico;
+- o resultado esperado pode ser obtido por `capic --emit ast arquivo.capi`;
+- todos os testes obrigatórios passam.
+
+### Resultado demonstrável
+
+O resultado demonstrável do Stage 2 é:
+
+```bash
+capic --emit ast arquivo.capi
+```
+
+Durante desenvolvimento local:
+
+```bash
+cd capi-lang
+cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+```
+
+Saída validada:
+
+```text
+CompilationUnit span=0..363
+  ModuleDecl path=banco.contas span=0..20
+  ImportDecl path=banco.Cliente span=21..42
+  ClassDecl name=Cliente span=51..252
+    Modifier Public span=44..50
+    Extends Path Pessoa span=76..82
+    Implements Path Autenticavel span=94..106
+    Uses Path Logavel span=112..119
+```
+
+A saída completa é validada por snapshot golden em:
+
+```text
+capi-lang/crates/capi-parser/tests/fixtures/ast_dump/basic.ast
+capi-lang/crates/capi-parser/tests/fixtures/ast_dump/recovery.ast
+```
+
+### Pendências
+
+Nenhuma pendência bloqueante do Stage 2.
+
+Itens reservados para stages posteriores:
+
+- HIR;
+- lowering efetivo de AST para HIR;
+- resolução de nomes;
+- tabelas de símbolos;
+- escopos;
+- checagem de tipos;
+- análise de ownership;
+- MIR;
+- backend;
+- runtime;
+- biblioteca padrão;
+- recuperação sofisticada de IDE/LSP.
+
+### Riscos
+
+- O subconjunto sintático inicial deve permanecer sincronizado com os documentos
+  de especificação e com `PARSER-IMPLEMENTATION.md`.
+- O formato de dump da AST é contrato observado e deve ser alterado apenas com
+  atualização intencional dos snapshots golden.
+- A recuperação sintática atual é suficiente para o Stage 2, mas recursos de
+  IDE/LSP exigirão estratégia incremental em stage futuro.
+- A AST preserva spans sintáticos, mas o consumo desses spans por HIR,
+  resolução de nomes e diagnósticos semânticos ainda depende dos próximos
+  stages.
+- Novas dependências externas continuam proibidas sem revisão explícita conforme
+  `DEPENDENCIES.md` e `ADR-0013`.
+- A MSRV `1.88.0` deve ser preservada até decisão formal de atualização.
+
+### Resultado da validação
+
+Stage 2 concluído conforme os critérios do Documento 28.
+
+O workspace Rust reconhece o subconjunto sintático inicial, constrói AST com
+spans, emite diagnósticos sintáticos estruturados, recupera erros recuperáveis,
+produz AST parcial com nós de erro, emite dump determinístico de AST por CLI e
+passa todos os testes obrigatórios definidos para o stage.

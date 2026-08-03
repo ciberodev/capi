@@ -22,7 +22,7 @@ fn help_prints_usage() {
     assert!(output.status.success());
     assert_eq!(
         stdout(&output),
-        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic arquivo.capi\n"
+        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic arquivo.capi\n"
     );
     assert!(stderr(&output).is_empty());
 }
@@ -113,4 +113,37 @@ fn emit_tokens_returns_failure_for_lexical_error() {
     assert!(stdout(&output).is_empty());
     assert!(stderr.contains("error[LEX0001]: invalid character in source file"));
     assert!(stderr.contains(":1:13"));
+}
+
+#[test]
+fn emit_ast_prints_ast_dump() {
+    let path = std::env::temp_dir().join("capic-cli-emit-ast.cap");
+    std::fs::write(&path, "function main() { let value = 1; }").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "ast", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout.contains("CompilationUnit"));
+    assert!(stdout.contains("FunctionDecl name=main"));
+    assert!(stdout.contains("LocalLet name=value"));
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn emit_ast_returns_failure_for_syntax_error() {
+    let path = std::env::temp_dir().join("capic-cli-syntax-fail.cap");
+    std::fs::write(&path, "function () { let value = ; }").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "ast", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("CompilationUnit"));
+    assert!(stderr.contains("error[PARSE0002]: expected function name"));
+    assert!(stderr.contains("error[PARSE0006]: expected expression"));
 }

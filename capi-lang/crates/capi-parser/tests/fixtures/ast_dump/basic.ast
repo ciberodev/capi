@@ -1,0 +1,38 @@
+CompilationUnit span=0..363
+  ModuleDecl path=banco.contas span=0..20
+  ImportDecl path=banco.Cliente span=21..42
+  ClassDecl name=Cliente span=51..252
+    Modifier Public span=44..50
+    Extends Path Pessoa span=76..82
+    Implements Path Autenticavel span=94..106
+    Uses Path Logavel span=112..119
+    FieldDecl name=nome span=134..148
+      Modifier Private span=126..133
+      Type Path String span=141..147
+    ConstructorDecl span=153..201
+      Param name=nome span=165..178
+        Type Path String span=172..178
+      Block span=180..201
+        ExprStmt span=182..199
+          AssignExpr span=182..198
+            Name this.nome span=182..191
+            Name nome span=194..198
+    MethodDecl name=getNome span=206..250
+      ReturnType Path String span=227..233
+      Block span=234..250
+        ReturnStmt span=236..248
+          Name nome span=243..247
+  FunctionDecl name=main span=254..362
+    Param name=value span=268..288
+      Type Generic base=List span=276..288
+        TypeArg Path String span=281..287
+    ReturnType Path Int32 span=292..297
+    Block span=298..362
+      LocalLet name=result span=304..341
+        BinaryExpr op=Plus span=317..340
+          CallExpr span=317..336
+            Name service.call span=317..329
+            Name value span=330..335
+          Literal Integer "1" span=339..340
+      ReturnStmt span=346..360
+        Name result span=353..359

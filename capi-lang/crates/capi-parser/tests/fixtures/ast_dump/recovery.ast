@@ -1,0 +1,14 @@
+CompilationUnit span=0..73
+  FunctionDecl name=main span=0..72
+    ReturnType <omitted>
+    Block span=16..72
+      LocalLet name=x span=22..31
+        Error message="expected expression" span=30..31
+      LocalLet name=y span=36..46
+        Literal Integer "1" span=44..45
+      ExprStmt span=51..56
+        BinaryExpr op=Plus span=51..56
+          Name a span=51..52
+          Error message="expected expression" span=55..56
+      ReturnStmt span=61..70
+        Name y span=68..69

@@ -28,7 +28,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> DriverRequest {
         [flag, kind, path] if flag == "--emit" && kind == "tokens" => DriverRequest::EmitTokens {
             path: PathBuf::from(path),
         },
-        [flag, kind, _, extra, ..] if flag == "--emit" && kind == "tokens" => {
+        [flag, kind, path] if flag == "--emit" && kind == "ast" => DriverRequest::EmitAst {
+            path: PathBuf::from(path),
+        },
+        [flag, kind, _, extra, ..]
+            if flag == "--emit" && matches!(kind.as_str(), "tokens" | "ast") =>
+        {
             DriverRequest::InvalidArguments {
                 message: format!("unexpected argument '{extra}'"),
             }

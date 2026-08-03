@@ -2,9 +2,11 @@
 
 use std::path::PathBuf;
 
+use capi_ast::dump_ast;
 use capi_common::{ExitStatus, CAPI_VERSION};
 use capi_diagnostics::{Diagnostic, DiagnosticBag, DiagnosticCode, DiagnosticRenderer};
 use capi_lexer::{lex, Token, TokenKind};
+use capi_parser::parse;
 use capi_session::{CompilationSession, SessionOptions};
 use capi_source::SourceMap;
 
@@ -23,6 +25,8 @@ pub enum DriverRequest {
     CheckSource { path: PathBuf },
     /// Emit tokens for a source file.
     EmitTokens { path: PathBuf },
+    /// Emit AST for a source file.
+    EmitAst { path: PathBuf },
 }
 
 /// Structured response produced by the driver.
@@ -105,6 +109,7 @@ pub fn run(request: DriverRequest) -> DriverResponse {
             }
         }
         DriverRequest::EmitTokens { path } => emit_tokens(path),
+        DriverRequest::EmitAst { path } => emit_ast(path),
     }
 }
 
@@ -114,7 +119,7 @@ pub fn initialize_session() -> CompilationSession {
 }
 
 fn help_text() -> &'static str {
-    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic arquivo.capi\n"
+    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic arquivo.capi\n"
 }
 
 fn emit_tokens(path: PathBuf) -> DriverResponse {
@@ -147,6 +152,47 @@ fn emit_tokens(path: PathBuf) -> DriverResponse {
         DriverResponse::failure(stderr)
     } else {
         DriverResponse::success(stdout)
+    }
+}
+
+fn emit_ast(path: PathBuf) -> DriverResponse {
+    let mut session = initialize_session();
+    let source = match session.sources_mut().load_file(&path) {
+        Ok(source) => source,
+        Err(error) => {
+            let diagnostic =
+                Diagnostic::error(error.to_string()).with_code(DiagnosticCode::source(1));
+            session.diagnostics_mut().push(diagnostic);
+            return DriverResponse::failure(format!("error: {error}\n"));
+        }
+    };
+
+    let Some(file) = session.sources().get(source) else {
+        return DriverResponse::internal_error(
+            "internal compiler error: loaded source is missing\n",
+        );
+    };
+    let output = lex(source, file.text());
+    let (tokens, diagnostics) = output.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+
+    if !session.diagnostics().has_errors() && !session.diagnostics().has_internal_errors() {
+        let parsed = parse(source, &tokens, session.sources());
+        let (ast, diagnostics) = parsed.into_parts();
+        session.diagnostics_mut().extend(diagnostics);
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        let stdout = dump_ast(&ast, session.sources());
+
+        if session.diagnostics().has_internal_errors() {
+            DriverResponse::internal_error(stderr)
+        } else if session.diagnostics().has_errors() {
+            DriverResponse::failure(format!("{stdout}{stderr}"))
+        } else {
+            DriverResponse::success(stdout)
+        }
+    } else {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        DriverResponse::failure(stderr)
     }
 }
 
@@ -228,6 +274,22 @@ mod tests {
         assert_eq!(response.status(), ExitStatus::Success);
         assert!(response.stdout().contains("Keyword(Let)"));
         assert!(response.stdout().contains("Identifier"));
+        assert!(response.stderr().is_empty());
+    }
+
+    #[test]
+    fn emits_ast_for_source_text() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-ast.cap");
+        std::fs::write(&temp, "function main() { let value = 1 + 2 * 3; }")
+            .expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitAst { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Success);
+        assert!(response.stdout().contains("CompilationUnit"));
+        assert!(response.stdout().contains("FunctionDecl name=main"));
+        assert!(response.stdout().contains("BinaryExpr op=Plus"));
         assert!(response.stderr().is_empty());
     }
 

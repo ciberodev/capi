@@ -11,10 +11,12 @@ repository = "https://github.com/ciberodev/capi"
 
 [workspace.dependencies]
 capi-cli = { path = "crates/capi-cli" }
+capi-ast = { path = "crates/capi-ast" }
 capi-common = { path = "crates/capi-common" }
 capi-diagnostics = { path = "crates/capi-diagnostics" }
 capi-driver = { path = "crates/capi-driver" }
 capi-lexer = { path = "crates/capi-lexer" }
+capi-parser = { path = "crates/capi-parser" }
 capi-session = { path = "crates/capi-session" }
 capi-source = { path = "crates/capi-source" }
 

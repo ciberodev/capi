@@ -1,5 +1,5 @@
 [package]
-name = "capi-driver"
+name = "capi-parser"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,11 +8,8 @@ repository.workspace = true
 
 [dependencies]
 capi-ast.workspace = true
-capi-common.workspace = true
 capi-diagnostics.workspace = true
 capi-lexer.workspace = true
-capi-parser.workspace = true
-capi-session.workspace = true
 capi-source.workspace = true
 
 [lints]

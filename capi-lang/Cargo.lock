@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "capi-ast"
+version = "0.0.0"
+dependencies = [
+ "capi-lexer",
+ "capi-source",
+]
+
+[[package]]
 name = "capi-cli"
 version = "0.0.0"
 dependencies = [
@@ -25,9 +33,11 @@ dependencies = [
 name = "capi-driver"
 version = "0.0.0"
 dependencies = [
+ "capi-ast",
  "capi-common",
  "capi-diagnostics",
  "capi-lexer",
+ "capi-parser",
  "capi-session",
  "capi-source",
 ]
@@ -37,6 +47,16 @@ name = "capi-lexer"
 version = "0.0.0"
 dependencies = [
  "capi-diagnostics",
+ "capi-source",
+]
+
+[[package]]
+name = "capi-parser"
+version = "0.0.0"
+dependencies = [
+ "capi-ast",
+ "capi-diagnostics",
+ "capi-lexer",
  "capi-source",
 ]
 

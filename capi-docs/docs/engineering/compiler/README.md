@@ -16,7 +16,9 @@ e os documentos de engenharia bloqueantes do stage atual.
 
 ## Estado Atual
 
-O Stage 1 do compilador está concentrado na infraestrutura inicial:
+O Stage 2 do compilador está concentrado no frontend sintático inicial.
+
+O Stage 1 entregou a infraestrutura de fontes, diagnósticos, tokens e lexer:
 
 * leitura e armazenamento de arquivos fonte;
 * `SourceId`, `SourceFile`, `SourceMap`, `Span`, linha e coluna;
@@ -29,19 +31,37 @@ O Stage 1 do compilador está concentrado na infraestrutura inicial:
 * testes obrigatórios de source, spans, Unicode, lexer, diagnósticos e entradas
   malformadas.
 
+O Stage 2 amplia essa base com parser e AST:
+
+* crate de AST com nós para unidade de compilação, módulos, imports,
+  declarações, classes, funções, tipos, comandos, expressões, padrões e nós de
+  erro;
+* preservação de spans em nós sintáticos relevantes;
+* parser do subconjunto sintático inicial;
+* parsing de módulos, imports, declarações, classes, funções, tipos, comandos e
+  expressões;
+* precedência e associatividade de operadores;
+* diagnósticos sintáticos estruturados com códigos `PARSE`;
+* recuperação de erros recuperáveis com AST parcial;
+* dump determinístico da AST via `capic --emit ast arquivo.capi`;
+* testes obrigatórios de declarações, expressões, precedência, tipos, classes,
+  erros sintáticos, recuperação, spans e dump da AST.
+
 A implementação correspondente vive em:
 
 ```text
 ../../../../capi-lang/crates/capi-source/
 ../../../../capi-lang/crates/capi-diagnostics/
 ../../../../capi-lang/crates/capi-lexer/
+../../../../capi-lang/crates/capi-ast/
+../../../../capi-lang/crates/capi-parser/
 ../../../../capi-lang/crates/capi-driver/
 ../../../../capi-lang/crates/capi-cli/
 ```
 
 ---
 
-## Documentos Ativos do Stage 1
+## Documentos Ativos dos Stages 1 e 2
 
 ### Fontes
 
@@ -58,6 +78,10 @@ A implementação correspondente vive em:
 | --- | --- | --- |
 | `frontend/TOKEN-MODEL.md` | Aprovado | Define o contrato de tokens, keywords, literais, operadores e delimitadores. |
 | `frontend/LEXER-IMPLEMENTATION.md` | Aprovado | Define a implementação do lexer, recuperação e dump de tokens. |
+| `frontend/AST-MODEL.md` | Aprovado | Define o modelo da AST, nós sintáticos, spans, nós de erro e dump determinístico. |
+| `frontend/PARSER-IMPLEMENTATION.md` | Aprovado | Define estratégia de parsing, contratos de entrada e saída, precedência e integração com AST. |
+| `frontend/PARSER-RECOVERY.md` | Aprovado | Define recuperação sintática, sincronização, diagnósticos e AST parcial. |
+| `frontend/AST-LOWERING.md` | Aprovado | Define o contrato de lowering da AST para HIR e seus limites para o Stage 3. |
 
 ### Diagnósticos
 
@@ -67,20 +91,11 @@ A implementação correspondente vive em:
 | `diagnostics/DIAGNOSTIC-ARCHITECTURE.md` | Aprovado | Define fluxo de produção, agregação e renderização de diagnósticos. |
 | `diagnostics/DIAGNOSTIC-STYLE-GUIDE.md` | Aprovado | Define estilo de mensagens, labels e notas para diagnósticos. |
 
-Esses documentos formam o contrato operacional mínimo do Stage 1.
+Esses documentos formam o contrato operacional dos Stages 1 e 2.
 
 ---
 
 ## Documentos Reservados
-
-### Frontend
-
-| Documento | Finalidade esperada |
-| --- | --- |
-| `frontend/AST-MODEL.md` | Definir a árvore sintática abstrata quando o parser for implementado. |
-| `frontend/PARSER-IMPLEMENTATION.md` | Definir estratégia de parsing, gramática operacional e contratos de saída. |
-| `frontend/PARSER-RECOVERY.md` | Definir recuperação de erros sintáticos. |
-| `frontend/AST-LOWERING.md` | Definir transformação de AST para representação semântica inicial. |
 
 ### Diagnósticos
 
@@ -157,9 +172,9 @@ obrigações próprias para a implementação.
 
 ---
 
-## Resultado Demonstrável do Stage 1
+## Resultado Demonstrável dos Stages 1 e 2
 
-O resultado observável mínimo do frontend inicial é:
+O resultado observável mínimo do lexer é:
 
 ```bash
 capic --emit tokens arquivo.capi
@@ -182,6 +197,30 @@ O comando deve imprimir tokens com:
 
 Entradas inválidas devem produzir diagnóstico estruturado, sem panic.
 
+O resultado observável mínimo do parser e da AST é:
+
+```bash
+capic --emit ast arquivo.capi
+```
+
+Durante desenvolvimento local, execute a partir de `capi-lang/`:
+
+```bash
+cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+```
+
+O comando deve imprimir um dump determinístico da AST com:
+
+* unidade de compilação;
+* módulos e imports;
+* declarações e membros;
+* tipos, comandos e expressões;
+* nós de erro quando a entrada for recuperável;
+* spans em formato `inicio..fim`.
+
+Para entradas sintaticamente inválidas mas recuperáveis, o driver pode retornar
+falha e ainda assim emitir a AST parcial junto dos diagnósticos.
+
 ---
 
 ## Critérios de Conclusão do Stage 1
@@ -200,6 +239,25 @@ Esses critérios foram cobertos por testes nos crates `capi-source`,
 
 ---
 
+## Critérios de Conclusão do Stage 2
+
+O Stage 2 é considerado concluído quando:
+
+* o subconjunto sintático inicial é aceito;
+* entradas inválidas produzem diagnósticos sintáticos adequados;
+* o parser continua após erros recuperáveis;
+* a AST preserva spans em nós relevantes;
+* o dump da AST é determinístico;
+* o resultado esperado pode ser obtido por `capic --emit ast arquivo.capi`;
+* todos os testes obrigatórios de parser e AST passam.
+
+Esses critérios são cobertos por testes nos crates `capi-ast`, `capi-parser`,
+`capi-driver` e `capi-cli`, incluindo testes de declarações, expressões,
+precedência, tipos, classes, erros sintáticos, recuperação, spans e snapshots
+golden do dump da AST.
+
+---
+
 ## Comandos Canônicos de Validação
 
 Execute a partir de `capi-lang/`:
@@ -209,16 +267,17 @@ cargo fmt --all --check
 cargo test --workspace
 cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
+cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 ```
 
-Esses comandos validam formatação, testes obrigatórios, lint e o resultado
-demonstrável do lexer.
+Esses comandos validam formatação, testes obrigatórios, lint, o resultado
+demonstrável do lexer e o resultado demonstrável do parser/AST.
 
 ---
 
 ## Ordem de Leitura Recomendada
 
-Para entender o Stage 1, leia nesta ordem:
+Para entender os Stages 1 e 2, leia nesta ordem:
 
 1. `source/SOURCE-MODEL.md`
 2. `source/SOURCE-MAP.md`
@@ -230,9 +289,15 @@ Para entender o Stage 1, leia nesta ordem:
 8. `frontend/TOKEN-MODEL.md`
 9. `frontend/LEXER-IMPLEMENTATION.md`
 10. `../testing/LEXER-TESTS.md`
+11. `frontend/AST-MODEL.md`
+12. `frontend/PARSER-IMPLEMENTATION.md`
+13. `frontend/PARSER-RECOVERY.md`
+14. `frontend/AST-LOWERING.md`
+15. `../testing/PARSER-TESTS.md`
 
 Essa ordem começa pelo modelo de fontes, conecta localização e diagnósticos,
-passa pelo contrato de tokens e termina na estratégia de testes léxicos.
+passa pelo contrato de tokens, lexer, AST, parser, recuperação e termina na
+estratégia de testes sintáticos.
 
 ---
 
@@ -246,6 +311,7 @@ Documentos relacionados:
 ../architecture/DEPENDENCY-RULES.md
 ../testing/TEST-STRATEGY.md
 ../testing/LEXER-TESTS.md
+../testing/PARSER-TESTS.md
 ../planning/DEFINITION-OF-DONE.md
 ../planning/FEATURE-STATUS.md
 ../../specification/README.md

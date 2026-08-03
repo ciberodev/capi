@@ -5,8 +5,10 @@ oficial da Linguagem Capi.
 
 Ela define como a suíte deve validar o workspace, a CLI `capic`, os diagnósticos,
 as fases do compilador e a conformidade com a especificação. A partir do Stage
-1, esta área também documenta os testes obrigatórios do lexer e dos componentes
-de fonte usados pelo frontend inicial.
+1, esta área documenta os testes obrigatórios do lexer e dos componentes de
+fonte usados pelo frontend inicial. A partir do Stage 2, também documenta os
+testes obrigatórios do parser, da AST, da recuperação sintática e do dump de
+AST.
 
 ---
 
@@ -16,6 +18,7 @@ de fonte usados pelo frontend inicial.
 | --- | --- | --- | --- |
 | `TEST-STRATEGY.md` | Aprovado | Documento de engenharia bloqueante | Define a estratégia oficial de testes, comandos de validação, camadas de teste, suíte mínima do Stage 0, critérios de CI e evolução da suíte nos próximos stages. |
 | `LEXER-TESTS.md` | Aprovado | Documento de testes do Stage 1 | Define cobertura obrigatória para `SourceMap`, spans, Unicode, tokenização, diagnósticos léxicos, entradas inválidas, snapshots e `capic --emit tokens`. |
+| `PARSER-TESTS.md` | Aprovado | Documento de testes do Stage 2 | Define cobertura obrigatória para parser, AST, precedência, tipos, classes, diagnósticos sintáticos, recuperação, spans, snapshots e `capic --emit ast`. |
 
 ---
 
@@ -29,7 +32,6 @@ de fonte usados pelo frontend inicial.
 | `COMPILE-PASS-TESTS.md` | Definir programas Capi que devem ser aceitos pelo compilador. |
 | `COMPILE-FAIL-TESTS.md` | Definir programas Capi que devem ser rejeitados com erro esperado. |
 | `RUN-PASS-TESTS.md` | Definir programas Capi que devem compilar, executar e produzir resultado esperado. |
-| `PARSER-TESTS.md` | Detalhar cobertura sintática quando o parser for implementado. |
 | `SEMANTIC-TESTS.md` | Detalhar cobertura de resolução, tipos e regras semânticas. |
 | `OWNERSHIP-TESTS.md` | Detalhar testes de ownership, borrowing, lifetime e modelos relacionados quando forem implementados. |
 | `MIR-TESTS.md` | Definir validação de MIR, passes e invariantes intermediários. |
@@ -88,6 +90,26 @@ O mínimo demonstrável inclui:
 * snapshot de dump de tokens;
 * teste de CLI para `capic --emit tokens arquivo.capi`.
 
+### Stage 2
+
+No Stage 2, a suíte passa a validar o frontend sintático inicial, a AST e a
+recuperação de erros do parser.
+
+O mínimo demonstrável inclui:
+
+* testes de declarações de topo;
+* testes de expressões;
+* testes de precedência e associatividade de operadores;
+* testes de tipos sintáticos;
+* testes de classes, membros, construtores e métodos;
+* testes de erros sintáticos com diagnósticos estruturados `PARSE`;
+* testes de recuperação após erros recuperáveis;
+* testes de AST e preservação de spans;
+* testes de nós de erro na AST parcial;
+* fixtures de dump determinístico da AST;
+* snapshots golden para o dump de AST;
+* teste de CLI para `capic --emit ast arquivo.capi`.
+
 ---
 
 ## Comandos canônicos de validação
@@ -101,10 +123,11 @@ cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --help
 cargo run -p capi-cli -- --version
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
+cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 ```
 
-Esses comandos são a base de validação usada para considerar o Stage 1
-concluído localmente.
+Esses comandos são a base de validação usada para considerar os Stages 1 e 2
+concluídos localmente.
 
 Quando a validação precisar reproduzir a CI com lockfile estrito, use a variante
 `--locked` dos comandos Cargo e o script local de CI, se disponível:
@@ -138,6 +161,29 @@ capi-lang/tests/lexer/snapshots/
 
 Fixtures `pass/` não devem produzir diagnósticos. Fixtures `fail/` devem
 produzir diagnósticos estruturados, com código, severidade e span primário.
+
+---
+
+## Organização dos testes sintáticos
+
+Os testes do parser e da AST usam quatro camadas:
+
+| Camada | Local | Finalidade |
+| --- | --- | --- |
+| Unitários | `capi-lang/crates/capi-parser/src/lib.rs` | Validar regras locais de parsing, precedência e recuperação. |
+| Integração | `capi-lang/crates/capi-parser/tests/parser_tests.rs` | Validar `SourceMap -> Lexer -> Parser -> AST -> Diagnostics`, estrutura da AST, spans e diagnósticos sintáticos. |
+| Snapshot/golden | `capi-lang/crates/capi-parser/tests/fixtures/ast_dump/` | Validar dump determinístico da AST byte a byte. |
+| CLI/driver | `capi-lang/crates/capi-cli/tests/` e `capi-lang/crates/capi-driver/src/lib.rs` | Validar comportamento observável de `capic --emit ast`. |
+
+Os dados de teste do dump de AST ficam em:
+
+```text
+capi-lang/crates/capi-parser/tests/fixtures/ast_dump/
+```
+
+Fixtures `.cap` definem a entrada. Fixtures `.ast` definem a saída esperada do
+dump determinístico. Mudanças nesses arquivos devem representar mudança
+intencional no contrato textual da AST.
 
 ---
 
@@ -176,6 +222,9 @@ Documentos relacionados:
 ../compiler/README.md
 ../compiler/frontend/LEXER-IMPLEMENTATION.md
 ../compiler/frontend/TOKEN-MODEL.md
+../compiler/frontend/AST-MODEL.md
+../compiler/frontend/PARSER-IMPLEMENTATION.md
+../compiler/frontend/PARSER-RECOVERY.md
 ../compiler/source/SOURCE-MAP.md
 ../compiler/source/SPANS-AND-LOCATIONS.md
 ../planning/DEFINITION-OF-DONE.md
@@ -193,18 +242,22 @@ Para entender a estratégia de testes, leia nesta ordem:
 
 1. `TEST-STRATEGY.md`
 2. `LEXER-TESTS.md`
-3. `../compiler/README.md`
-4. `../compiler/source/SOURCE-MAP.md`
-5. `../compiler/frontend/TOKEN-MODEL.md`
-6. `../compiler/frontend/LEXER-IMPLEMENTATION.md`
-7. `../build-and-ci/BUILD-SYSTEM.md`
-8. `../planning/DEFINITION-OF-DONE.md`
-9. `../architecture/COMPILATION-PIPELINE.md`
-10. `../architecture/COMPILER-ARCHITECTURE.md`
+3. `PARSER-TESTS.md`
+4. `../compiler/README.md`
+5. `../compiler/source/SOURCE-MAP.md`
+6. `../compiler/frontend/TOKEN-MODEL.md`
+7. `../compiler/frontend/LEXER-IMPLEMENTATION.md`
+8. `../compiler/frontend/AST-MODEL.md`
+9. `../compiler/frontend/PARSER-IMPLEMENTATION.md`
+10. `../compiler/frontend/PARSER-RECOVERY.md`
+11. `../build-and-ci/BUILD-SYSTEM.md`
+12. `../planning/DEFINITION-OF-DONE.md`
+13. `../architecture/COMPILATION-PIPELINE.md`
+14. `../architecture/COMPILER-ARCHITECTURE.md`
 
-Essa ordem parte da política geral, passa pela suíte léxica do Stage 1 e depois
-conecta a validação ao compilador, ao build, aos critérios de aceite e à
-arquitetura.
+Essa ordem parte da política geral, passa pelas suítes léxica e sintática dos
+Stages 1 e 2 e depois conecta a validação ao compilador, ao build, aos critérios
+de aceite e à arquitetura.
 
 ---
 

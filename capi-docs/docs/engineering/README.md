@@ -29,14 +29,14 @@ documentos bloqueantes do stage atual.
 | --- | --- | --- |
 | `architecture/` | Ativa | Arquitetura do compilador, workspace, componentes, dependências e pipeline de compilação. |
 | `build-and-ci/` | Ativa | Sistema de build, comandos canônicos, scripts, CI, artefatos e validação automatizada. |
-| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, frontend léxico e fases futuras. |
+| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, lexer, parser, AST e fases futuras. |
 | `development/` | Ativa | Ambiente local, build a partir do código-fonte, padrões de código e guia de estilo Rust. |
-| `planning/` | Ativa | Definition of Done, registro de progresso do Stage 0 e documentos futuros de planejamento. |
-| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0 e testes léxicos obrigatórios do Stage 1. |
+| `planning/` | Ativa | Definition of Done, status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica. |
+| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0, testes léxicos do Stage 1 e testes sintáticos do Stage 2. |
 
 Essas áreas possuem documentação preenchida e fazem parte da implementação
-ativa. Os documentos obrigatórios do Stage 1 estão aprovados e servem como
-contrato operacional para o frontend léxico inicial.
+ativa. Os documentos obrigatórios dos Stages 1 e 2 estão aprovados e servem
+como contrato operacional para o frontend inicial.
 
 ---
 
@@ -110,11 +110,51 @@ O resultado demonstrável é:
 capic --emit tokens arquivo.capi
 ```
 
+### Stage 2
+
+O Stage 2 implementou o frontend sintático inicial.
+
+Resultados registrados:
+
+* documentos de AST, parser, recuperação e lowering preenchidos em
+  `compiler/frontend/`;
+* documento de testes sintáticos preenchido em `testing/PARSER-TESTS.md`;
+* crate `capi-ast` criado;
+* crate `capi-parser` criado;
+* AST com spans implementada;
+* parser de módulos, imports, declarações, classes, funções, tipos, comandos e
+  expressões implementado;
+* precedência de operadores implementada;
+* diagnósticos sintáticos estruturados com códigos `PARSE` implementados;
+* recuperação de erros recuperáveis implementada;
+* AST parcial com nós de erro implementada;
+* dump determinístico da AST implementado;
+* snapshots golden de dump de AST criados;
+* `capic --emit ast arquivo.capi` implementado;
+* critérios de conclusão do Stage 2 validados por testes.
+
+O resultado demonstrável é:
+
+```bash
+capic --emit ast arquivo.capi
+```
+
+### Próximo stage
+
+O próximo stage planejado é:
+
+```text
+Stage 3 — HIR e resolução de nomes
+```
+
+O início do Stage 3 deve passar pelos documentos de HIR, símbolos, escopos,
+resolução de nomes e testes semânticos.
+
 ---
 
 ## Ordem de leitura recomendada
 
-Para entender a engenharia do projeto a partir do Stage 1, leia nesta ordem:
+Para entender a engenharia do projeto a partir do Stage 2, leia nesta ordem:
 
 1. `ENGINEERING-PRINCIPLES.md`
 2. `PROJECT-STRUCTURE.md`
@@ -122,14 +162,14 @@ Para entender a engenharia do projeto a partir do Stage 1, leia nesta ordem:
 4. `architecture/README.md`
 5. `development/README.md`
 6. `build-and-ci/README.md`
-7. `compiler/README.md`
-8. `testing/README.md`
-9. `planning/README.md`
+7. `planning/README.md`
+8. `compiler/README.md`
+9. `testing/README.md`
 10. `../adr/README.md`
 11. `../specification/README.md`
 
 Essa ordem começa pelos princípios, passa pela estrutura e depois conecta
-arquitetura, operação, compilador, testes, planejamento, decisões e
+arquitetura, operação, planejamento, compilador, testes, decisões e
 especificação.
 
 ---
@@ -164,9 +204,9 @@ planning/FEATURE-STATUS.md
 
 ---
 
-## Documentos ativos do Stage 1
+## Documentos ativos dos Stages 1 e 2
 
-O Stage 1 usa os seguintes documentos de engenharia do compilador:
+O Stage 1 usa os seguintes documentos de engenharia:
 
 ```text
 compiler/source/SOURCE-MODEL.md
@@ -181,8 +221,37 @@ compiler/diagnostics/DIAGNOSTIC-STYLE-GUIDE.md
 testing/LEXER-TESTS.md
 ```
 
+O Stage 2 usa os seguintes documentos de engenharia:
+
+```text
+compiler/frontend/AST-MODEL.md
+compiler/frontend/PARSER-IMPLEMENTATION.md
+compiler/frontend/PARSER-RECOVERY.md
+compiler/frontend/AST-LOWERING.md
+testing/PARSER-TESTS.md
+```
+
 Esses documentos estão em status `Aprovado` e descrevem a implementação e os
-testes entregues para o frontend léxico inicial.
+testes entregues para o frontend inicial.
+
+---
+
+## Documentos ativos de planejamento
+
+O planejamento da implementação oficial é acompanhado por:
+
+```text
+planning/DEFINITION-OF-DONE.md
+planning/FEATURE-STATUS.md
+planning/IMPLEMENTATION-ORDER.md
+planning/MILESTONES.md
+planning/RISK-REGISTER.md
+planning/ROADMAP.md
+planning/TECHNICAL-DEBT.md
+```
+
+Esses documentos registram critérios de aceite, progresso, ordem operacional,
+milestones, roadmap, riscos e dívidas técnicas monitoradas.
 
 ---
 
@@ -195,10 +264,11 @@ cargo fmt --all --check
 cargo test --workspace
 cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
+cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 ```
 
 Esses comandos validam a implementação atual do workspace, incluindo os critérios
-obrigatórios do Stage 1.
+obrigatórios dos Stages 1 e 2.
 
 ---
 
@@ -221,14 +291,17 @@ A documentação de engenharia deve permanecer sincronizada com:
 ../../capi-lang/crates/capi-source/
 ../../capi-lang/crates/capi-diagnostics/
 ../../capi-lang/crates/capi-lexer/
+../../capi-lang/crates/capi-ast/
+../../capi-lang/crates/capi-parser/
 ../../capi-lang/crates/capi-driver/
 ../../capi-lang/crates/capi-cli/
 ../../capi-lang/tests/lexer/
+../../capi-lang/crates/capi-parser/tests/
 ../../.github/workflows/capi-lang-ci.yml
 ```
 
 Mudanças estruturais no workspace, dependências, toolchain, CI, crates
-fundamentais, frontend léxico ou layout de testes devem ser refletidas nos
+fundamentais, frontend, AST, parser ou layout de testes devem ser refletidas nos
 documentos de engenharia e, quando forem decisões arquiteturais, nas ADRs
 correspondentes.
 

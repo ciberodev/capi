@@ -1,0 +1,13 @@
+module banco.contas;
+import banco.Cliente;
+
+public class Cliente<T> extends Pessoa implements Autenticavel uses Logavel {
+    private nome : String;
+    constructor(nome : String) { this.nome = nome; }
+    function getNome() : String { return nome; }
+}
+
+function main(value : List<String>) : Int32 {
+    let result = service.call(value) + 1;
+    return result;
+}

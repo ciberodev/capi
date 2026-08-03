@@ -2,7 +2,7 @@
 
 **Capi** é uma linguagem de programação orientada a objetos projetada em torno de ownership explícito de regiões de memória, identidade estável de objetos, gerenciamento determinístico de recursos e concorrência segura.
 
-A linguagem não tenta adaptar o modelo de ownership do Rust à programação orientada a objetos tradicional. Em vez disso, Capi define seu próprio modelo de objetos:
+A linguagem não adapta o modelo de ownership do Rust à programação orientada a objetos tradicional. Em vez disso, Capi define seu próprio modelo de objetos:
 
 - objetos representam identidade lógica e comportamento;
 - armazenamento físico mutável pertence a unidades maiores chamadas **Domains**;
@@ -12,35 +12,51 @@ A linguagem não tenta adaptar o modelo de ownership do Rust à programação or
 
 ## Estado do Repositório
 
-Capi está atualmente no **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** da implementação oficial.
+Capi está atualmente após o **Stage 2 - Parser e AST** da implementação oficial.
 
-O repositório contém a especificação da linguagem, a especificação da implementação, decisões arquiteturais, documentação de engenharia e o workspace Rust inicial da implementação oficial.
+O repositório contém a especificação da linguagem, a especificação da implementação, decisões arquiteturais, documentação de engenharia, registros de planejamento e o workspace Rust da implementação oficial.
 
-Existe um executável `capic` em `capi-lang/`. Ele suporta `--help`, `--version`, validação de argumentos, erros de carregamento de arquivo fonte, inicialização de sessão, tratamento básico de erros internos e o comando de dump de tokens do Stage 1:
+Existe um executável `capic` em `capi-lang/`. Atualmente ele suporta:
+
+- `--help`;
+- `--version`;
+- validação de argumentos;
+- erros de carregamento de arquivo fonte;
+- inicialização de sessão;
+- tratamento básico de erros internos;
+- dumps de tokens do Stage 1;
+- dumps de AST do Stage 2.
+
+Comandos demonstráveis atuais:
 
 ```bash
 capic --emit tokens arquivo.capi
+capic --emit ast arquivo.capi
 ```
 
 Ele ainda não compila programas Capi.
 
-O pacote de documentação foi consolidado com índices de topo, changelog, documentos de engenharia aprovados do Stage 0 e do Stage 1, e o registro formal de progresso do Stage 0.
+O próximo stage planejado é:
+
+```text
+Stage 3 - HIR e resolução de nomes
+```
 
 ## Fase Atual
 
-O **Stage 0 - Fundação do Projeto** foi concluído localmente conforme os critérios de validação do Stage 0.
+O **Stage 0 - Fundação do Projeto** está concluído.
 
-O Stage 0 criou:
+O Stage 0 entregou:
 
 - o workspace Cargo inicial em `capi-lang/`;
 - os primeiros crates do compilador;
 - o executável mínimo `capic`;
-- infraestrutura de build, formatação, lint, testes e CI;
+- infraestrutura de build, formatação, lint, testes, documentação e CI;
 - as regras iniciais de engenharia que orientam o desenvolvimento.
 
-Os documentos de engenharia e ADRs exigidos para o Stage 0 foram aprovados na documentação do projeto.
+O **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** está concluído.
 
-O **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** entregou:
+O Stage 1 entregou:
 
 - gerenciamento de fontes com `SourceId`, `SourceFile`, `SourceMap`, `Span` e consulta de linha e coluna;
 - diagnósticos estruturados com códigos, labels, notas, sugestões e renderização;
@@ -49,11 +65,34 @@ O **Stage 1 - Infraestrutura de Fontes, Diagnósticos e Lexer** entregou:
 - suporte a dump de tokens por meio de `capic --emit tokens`;
 - fixtures do lexer, snapshots, testes léxicos compile-fail, testes de posição de diagnósticos e testes de robustez contra entradas malformadas.
 
-Os documentos de engenharia exigidos para o Stage 1 foram aprovados na documentação do projeto.
+O **Stage 2 - Parser e AST** está concluído.
+
+O Stage 2 entregou:
+
+- o crate `capi-ast`;
+- o crate `capi-parser`;
+- nós de AST para unidades de compilação, módulos, imports, declarações, classes, funções, tipos, comandos, expressões, padrões e nós de erro;
+- preservação de spans nos nós relevantes da AST;
+- suporte de parser para o subconjunto sintático inicial;
+- precedência e associatividade de operadores;
+- diagnósticos sintáticos estruturados com códigos `PARSE`;
+- recuperação após erros sintáticos recuperáveis;
+- ASTs parciais com nós de erro explícitos;
+- dumps determinísticos da AST;
+- testes de snapshot golden para dumps da AST;
+- suporte a dump de AST por meio de `capic --emit ast`.
 
 O registro formal de progresso é:
 
 - [`FEATURE-STATUS.md`](capi-docs/docs/engineering/planning/FEATURE-STATUS.md)
+
+A ordem de implementação, milestones, roadmap, riscos e registros de dívida técnica são:
+
+- [`IMPLEMENTATION-ORDER.md`](capi-docs/docs/engineering/planning/IMPLEMENTATION-ORDER.md)
+- [`MILESTONES.md`](capi-docs/docs/engineering/planning/MILESTONES.md)
+- [`ROADMAP.md`](capi-docs/docs/engineering/planning/ROADMAP.md)
+- [`RISK-REGISTER.md`](capi-docs/docs/engineering/planning/RISK-REGISTER.md)
+- [`TECHNICAL-DEBT.md`](capi-docs/docs/engineering/planning/TECHNICAL-DEBT.md)
 
 O changelog da documentação é:
 
@@ -84,37 +123,31 @@ Pontos de entrada importantes:
 - [`Especificação`](capi-docs/docs/specification/README.md) - especificação da linguagem e da implementação.
 - [`Especificação da linguagem`](capi-docs/docs/specification/language/) - documentos `00` a `12`.
 - [`Especificação de implementação`](capi-docs/docs/specification/implementation/) - documentos `13` a `28`.
-- [`Documentação de engenharia`](capi-docs/docs/engineering/) - arquitetura, build, testes, desenvolvimento, planejamento, runtime, toolchain, release e segurança.
+- [`Documentação de engenharia`](capi-docs/docs/engineering/) - arquitetura, build, testes, desenvolvimento, planejamento e documentação do compilador.
+- [`Engenharia do compilador`](capi-docs/docs/engineering/compiler/README.md) - fontes, diagnósticos, lexer, parser, AST e fases futuras do compilador.
+- [`Engenharia de testes`](capi-docs/docs/engineering/testing/README.md) - estratégia de testes, testes do lexer e testes do parser.
+- [`Planejamento`](capi-docs/docs/engineering/planning/README.md) - definição de pronto, status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica.
 - [`ADRs`](capi-docs/docs/adr/) - registros de decisões arquiteturais.
-- [`RFCs`](capi-docs/docs/rfc/) - propostas futuras de mudança na linguagem e no projeto.
-- [`Governança`](capi-docs/docs/governance/) - processo de decisão e papéis do projeto.
 
-O documento mais recente de planejamento da implementação é:
+O documento de planejamento da implementação é:
 
 - [`28 - Plano de Desenvolvimento da Implementação Oficial`](capi-docs/docs/specification/implementation/28%20%E2%80%94%20Plano%20de%20Desenvolvimento%20da%20Implementa%C3%A7%C3%A3o%20Oficial.md)
 
-Os índices de engenharia atualmente ativos são:
-
-- [`Arquitetura`](capi-docs/docs/engineering/architecture/README.md)
-- [`Build e CI`](capi-docs/docs/engineering/build-and-ci/README.md)
-- [`Compilador`](capi-docs/docs/engineering/compiler/README.md)
-- [`Desenvolvimento`](capi-docs/docs/engineering/development/README.md)
-- [`Testes`](capi-docs/docs/engineering/testing/README.md)
-- [`Planejamento`](capi-docs/docs/engineering/planning/README.md)
-
 ## Modelo de Desenvolvimento
 
-A implementação oficial é planejada como um compilador e uma toolchain baseados em Rust, inicialmente construídos com um workspace Cargo.
+A implementação oficial é um compilador e futura toolchain baseados em Rust, inicialmente construídos com um workspace Cargo.
 
 Os crates atuais do workspace são:
 
 - `capi-cli` - executável `capic` e parsing de argumentos;
-- `capi-driver` - orquestração do driver do compilador e saída de dump de tokens;
+- `capi-driver` - orquestração do driver do compilador e saídas de dump;
 - `capi-common` - tipos e constantes fundamentais compartilhados;
 - `capi-session` - configuração da sessão de compilação;
 - `capi-source` - carregamento de arquivos fonte, source maps, spans e consulta de linha e coluna;
 - `capi-diagnostics` - infraestrutura de diagnósticos estruturados;
-- `capi-lexer` - modelo de tokens e lexer inicial.
+- `capi-lexer` - modelo de tokens e lexer inicial;
+- `capi-ast` - modelo da árvore sintática abstrata e dump determinístico da AST;
+- `capi-parser` - parser, diagnósticos sintáticos, recuperação e construção da AST.
 
 O workspace atualmente não possui dependências externas de crates Rust. A política de dependências está registrada em [`capi-lang/DEPENDENCIES.md`](capi-lang/DEPENDENCIES.md).
 
@@ -153,14 +186,16 @@ Neste momento, o repositório possui:
 - um conjunto completo de especificação da linguagem, dos documentos `00` a `12`;
 - um conjunto de especificação de implementação, dos documentos `13` a `28`;
 - ADRs aprovadas do Stage 0 para decisões centrais de implementação;
-- documentos de engenharia aprovados do Stage 0 e do Stage 1;
+- documentos de engenharia aprovados para os Stages 0, 1 e 2;
 - índices de documentação para `capi-docs`, `docs`, ADRs, engenharia, compilador, arquitetura, build/CI, desenvolvimento, testes e planejamento;
+- registros de planejamento para status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica;
 - um changelog de `capi-docs`;
 - um workspace Cargo Rust em `capi-lang`;
-- os crates fundamentais do compilador mais os crates iniciais de fontes, diagnósticos e lexer;
-- um executável `capic` com suporte a dump de tokens do Stage 1;
+- os crates fundamentais do compilador mais os crates de fontes, diagnósticos, lexer, AST e parser;
+- um executável `capic` com suporte a dump de tokens e dump de AST;
 - scripts de validação local e configuração de workflow de CI;
-- fixtures do lexer e testes de snapshot.
+- fixtures do lexer e testes de snapshot;
+- testes de integração do parser e snapshots golden de dump da AST.
 
 O conjunto atual de validação local inclui:
 
@@ -173,16 +208,22 @@ cargo test --workspace --locked
 cargo run -p capi-cli --locked -- --help
 cargo run -p capi-cli --locked -- --version
 cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
-scripts/ci-local.sh
+cargo run -p capi-cli --bin capic --locked -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+scripts/check.sh
 ```
 
-O workflow de CI está versionado em [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). A execução remota da CI depende de um evento de `push` ou `pull_request`, enquanto a validação local equivalente passou para o Stage 1.
+O workflow de CI está versionado em [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). Ele valida formatação, versões da toolchain, política de dependências, Clippy, testes, build, documentação e smoke tests do `capic` para dumps de tokens e AST.
 
 ## O Que Ainda Não Está Pronto
 
 O repositório ainda não fornece:
 
 - um compilador capaz de compilar programas Capi;
+- HIR ou resolução de nomes;
+- checagem de tipos;
+- análise de ownership e domains;
+- MIR;
+- geração de código;
 - um gerenciador de pacotes;
 - uma implementação da biblioteca padrão;
 - uma implementação do runtime;
@@ -191,7 +232,24 @@ O repositório ainda não fornece:
 
 ## Roadmap Imediato
 
-O próximo passo imediato é continuar com o próximo trabalho de frontend definido pelo Documento 28, usando como base a fundação de fontes, diagnósticos e lexer do Stage 1.
+O próximo passo imediato é o **Stage 3 - HIR e resolução de nomes**.
+
+O Stage 3 deve começar pelos documentos semânticos obrigatórios e depois implementar:
+
+- lowering de AST para HIR;
+- IDs internos;
+- tabelas de símbolos;
+- escopos;
+- módulos e imports;
+- resolução de nomes;
+- diagnósticos de símbolos duplicados, inexistentes e ambíguos;
+- dump determinístico da HIR.
+
+Comando demonstrável esperado:
+
+```bash
+capic --emit hir arquivo.capi
+```
 
 ## Nota do Projeto
 
