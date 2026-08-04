@@ -152,18 +152,24 @@ impl<'a> Parser<'a> {
 
     fn parse_import_decl(&mut self) -> ImportDecl {
         let start = self.expect_keyword(Keyword::Import, "expected `import`");
-        let path = self.parse_path();
+        let first = self.parse_identifier("expected identifier");
+        let mut path_span = first.span;
+        let mut segments = vec![first];
         let mut wildcard = false;
-        if self.eat_delimiter(Delimiter::Dot).is_some() {
+        while self.eat_delimiter(Delimiter::Dot).is_some() {
             if self.eat_operator(Operator::Star).is_some() {
                 wildcard = true;
+                break;
             } else {
-                self.error_here(
-                    ParseDiagnosticKind::ExpectedToken,
-                    "expected `*` after `.` in import",
-                );
+                let segment = self.parse_identifier("expected identifier after `.`");
+                path_span = self.merge(path_span, segment.span);
+                segments.push(segment);
             }
         }
+        let path = Path {
+            segments,
+            span: path_span,
+        };
         let end = self.expect_delimiter(
             Delimiter::Semicolon,
             "expected `;` after import declaration",
@@ -1418,8 +1424,9 @@ mod tests {
 
     #[test]
     fn parses_module_import_and_function() {
-        let output =
-            parse_text("module banco.contas;\nimport banco.Cliente;\nfunction main() {}\n");
+        let output = parse_text(
+            "module banco.contas;\nimport banco.Cliente;\nimport banco.*;\nfunction main() {}\n",
+        );
 
         assert!(
             output.diagnostics().is_empty(),
@@ -1427,7 +1434,9 @@ mod tests {
             output.diagnostics()
         );
         assert!(output.ast().root().module.is_some());
-        assert_eq!(output.ast().root().imports.len(), 1);
+        assert_eq!(output.ast().root().imports.len(), 2);
+        assert!(!output.ast().root().imports[0].wildcard);
+        assert!(output.ast().root().imports[1].wildcard);
         assert_eq!(output.ast().root().declarations.len(), 1);
     }
 

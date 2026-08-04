@@ -16,7 +16,8 @@ e os documentos de engenharia bloqueantes do stage atual.
 
 ## Estado Atual
 
-O Stage 2 do compilador está concentrado no frontend sintático inicial.
+O Stage 3 do compilador está concentrado na HIR, no lowering da AST para HIR e
+na primeira etapa semântica de escopos, símbolos e resolução de nomes.
 
 O Stage 1 entregou a infraestrutura de fontes, diagnósticos, tokens e lexer:
 
@@ -31,7 +32,7 @@ O Stage 1 entregou a infraestrutura de fontes, diagnósticos, tokens e lexer:
 * testes obrigatórios de source, spans, Unicode, lexer, diagnósticos e entradas
   malformadas.
 
-O Stage 2 amplia essa base com parser e AST:
+O Stage 2 ampliou essa base com parser e AST:
 
 * crate de AST com nós para unidade de compilação, módulos, imports,
   declarações, classes, funções, tipos, comandos, expressões, padrões e nós de
@@ -47,6 +48,21 @@ O Stage 2 amplia essa base com parser e AST:
 * testes obrigatórios de declarações, expressões, precedência, tipos, classes,
   erros sintáticos, recuperação, spans e dump da AST.
 
+O Stage 3 amplia o frontend com HIR e análise semântica inicial:
+
+* `capi-hir` como modelo HIR puro, sem dependência direta da AST;
+* `capi-lowering` como fronteira AST -> HIR;
+* IDs HIR tipados e determinísticos;
+* preservação de `SourceId`, spans e mapeamento AST-HIR no lowering;
+* tabelas de símbolos com `SymbolId` interno;
+* grafo de escopos com `ScopeId` interno;
+* registro de módulos, imports, itens, membros, parâmetros, locais e patterns;
+* resolução de nomes para o subconjunto inicial;
+* diagnóstico de símbolos duplicados, referências inexistentes e ambiguidades;
+* dump determinístico de HIR resolvida via `capic --emit hir arquivo.capi`;
+* testes obrigatórios de lowering, HIR, escopos, símbolos, resolução,
+  diagnósticos semânticos e CLI.
+
 A implementação correspondente vive em:
 
 ```text
@@ -55,13 +71,16 @@ A implementação correspondente vive em:
 ../../../../capi-lang/crates/capi-lexer/
 ../../../../capi-lang/crates/capi-ast/
 ../../../../capi-lang/crates/capi-parser/
+../../../../capi-lang/crates/capi-hir/
+../../../../capi-lang/crates/capi-lowering/
+../../../../capi-lang/crates/capi-sema/
 ../../../../capi-lang/crates/capi-driver/
 ../../../../capi-lang/crates/capi-cli/
 ```
 
 ---
 
-## Documentos Ativos dos Stages 1 e 2
+## Documentos Ativos dos Stages 1, 2 e 3
 
 ### Fontes
 
@@ -83,6 +102,15 @@ A implementação correspondente vive em:
 | `frontend/PARSER-RECOVERY.md` | Aprovado | Define recuperação sintática, sincronização, diagnósticos e AST parcial. |
 | `frontend/AST-LOWERING.md` | Aprovado | Define o contrato de lowering da AST para HIR e seus limites para o Stage 3. |
 
+### Semântica Inicial
+
+| Documento | Status | Finalidade |
+| --- | --- | --- |
+| `semantic/HIR-MODEL.md` | Aprovado | Define a representação semântica de alto nível, IDs HIR, origem, estrutura e dump. |
+| `semantic/SYMBOL-MODEL.md` | Aprovado | Define símbolos, namespaces, identidade interna e tabela de símbolos. |
+| `semantic/SCOPE-MODEL.md` | Aprovado | Define escopos, owners, hierarquia e relação HIR-escopo. |
+| `semantic/NAME-RESOLUTION.md` | Aprovado | Define resolução de nomes, bindings e diagnósticos de resolução. |
+
 ### Diagnósticos
 
 | Documento | Status | Finalidade |
@@ -91,7 +119,7 @@ A implementação correspondente vive em:
 | `diagnostics/DIAGNOSTIC-ARCHITECTURE.md` | Aprovado | Define fluxo de produção, agregação e renderização de diagnósticos. |
 | `diagnostics/DIAGNOSTIC-STYLE-GUIDE.md` | Aprovado | Define estilo de mensagens, labels e notas para diagnósticos. |
 
-Esses documentos formam o contrato operacional dos Stages 1 e 2.
+Esses documentos formam o contrato operacional dos Stages 1, 2 e 3.
 
 ---
 
@@ -109,16 +137,12 @@ Esses documentos formam o contrato operacional dos Stages 1 e 2.
 
 | Documento | Finalidade esperada |
 | --- | --- |
-| `semantic/SYMBOL-MODEL.md` | Definir símbolos, entidades nomeadas e tabelas semânticas. |
-| `semantic/SCOPE-MODEL.md` | Definir escopos, blocos, módulos e visibilidade. |
-| `semantic/NAME-RESOLUTION.md` | Definir resolução de nomes. |
 | `semantic/TYPE-MODEL.md` | Definir representação de tipos. |
 | `semantic/TYPE-INFERENCE.md` | Definir inferência de tipos. |
 | `semantic/TYPE-CHECKING-PIPELINE.md` | Definir pipeline de checagem semântica. |
 | `semantic/TYPE-INTERNING.md` | Definir interning/canonicalização de tipos. |
 | `semantic/GENERICS-IMPLEMENTATION.md` | Definir implementação de generics. |
 | `semantic/SUBTYPING-AND-COERCIONS.md` | Definir subtipagem e coerções. |
-| `semantic/HIR-MODEL.md` | Definir representação semântica de alto nível. |
 
 ### Memória
 
@@ -172,7 +196,7 @@ obrigações próprias para a implementação.
 
 ---
 
-## Resultado Demonstrável dos Stages 1 e 2
+## Resultado Demonstrável dos Stages 1, 2 e 3
 
 O resultado observável mínimo do lexer é:
 
@@ -221,6 +245,31 @@ O comando deve imprimir um dump determinístico da AST com:
 Para entradas sintaticamente inválidas mas recuperáveis, o driver pode retornar
 falha e ainda assim emitir a AST parcial junto dos diagnósticos.
 
+O resultado observável mínimo da HIR e da resolução inicial de nomes é:
+
+```bash
+capic --emit hir arquivo.capi
+```
+
+Durante desenvolvimento local, execute a partir de `capi-lang/`:
+
+```bash
+cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
+```
+
+O comando deve imprimir um dump determinístico com:
+
+* unidade HIR;
+* módulos e imports;
+* itens, blocos, comandos, expressões e tipos pendentes;
+* escopos;
+* símbolos;
+* bindings de nomes resolvidos.
+
+Entradas com erro semântico de resolução devem produzir diagnóstico estruturado
+e retornar falha controlada. O dump pode exibir bindings como `not_found` ou
+`ambiguous` quando a HIR resolvida parcial for útil para depuração.
+
 ---
 
 ## Critérios de Conclusão do Stage 1
@@ -258,6 +307,30 @@ golden do dump da AST.
 
 ---
 
+## Critérios de Conclusão do Stage 3
+
+O Stage 3 é considerado concluído quando:
+
+* lowering de AST para HIR existe em `capi-lowering`;
+* `capi-hir` permanece como modelo HIR puro, sem dependência direta da AST;
+* IDs HIR, `ScopeId` e `SymbolId` são internos, tipados e determinísticos dentro
+  da análise;
+* símbolos do subconjunto inicial são registrados em tabela de símbolos;
+* escopos do subconjunto inicial são construídos em grafo determinístico;
+* módulos e imports do subconjunto inicial são representados;
+* todos os nomes resolvíveis do subconjunto inicial são resolvidos;
+* símbolos duplicados, referências inexistentes e ambiguidades produzem
+  diagnósticos estruturados;
+* HIR resolvida pode ser emitida por `capic --emit hir arquivo.capi`;
+* todos os testes obrigatórios passam.
+
+Esses critérios são cobertos por testes nos crates `capi-hir`,
+`capi-lowering`, `capi-sema`, `capi-driver` e `capi-cli`, incluindo testes de
+lowering, IDs, símbolos, escopos, resolução, diagnósticos semânticos, snapshots
+e CLI.
+
+---
+
 ## Comandos Canônicos de Validação
 
 Execute a partir de `capi-lang/`:
@@ -268,16 +341,24 @@ cargo test --workspace
 cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
 ```
 
 Esses comandos validam formatação, testes obrigatórios, lint, o resultado
-demonstrável do lexer e o resultado demonstrável do parser/AST.
+demonstrável do lexer, o resultado demonstrável do parser/AST e o resultado
+demonstrável da HIR resolvida.
+
+A validação consolidada do workspace é:
+
+```bash
+./scripts/check.sh
+```
 
 ---
 
 ## Ordem de Leitura Recomendada
 
-Para entender os Stages 1 e 2, leia nesta ordem:
+Para entender os Stages 1, 2 e 3, leia nesta ordem:
 
 1. `source/SOURCE-MODEL.md`
 2. `source/SOURCE-MAP.md`
@@ -294,10 +375,16 @@ Para entender os Stages 1 e 2, leia nesta ordem:
 13. `frontend/PARSER-RECOVERY.md`
 14. `frontend/AST-LOWERING.md`
 15. `../testing/PARSER-TESTS.md`
+16. `semantic/HIR-MODEL.md`
+17. `semantic/SCOPE-MODEL.md`
+18. `semantic/SYMBOL-MODEL.md`
+19. `semantic/NAME-RESOLUTION.md`
+20. `../testing/SEMANTIC-TESTS.md`
 
 Essa ordem começa pelo modelo de fontes, conecta localização e diagnósticos,
-passa pelo contrato de tokens, lexer, AST, parser, recuperação e termina na
-estratégia de testes sintáticos.
+passa pelo contrato de tokens, lexer, AST, parser, recuperação, lowering e
+termina na HIR, escopos, símbolos, resolução de nomes e estratégia de testes
+semânticos.
 
 ---
 
@@ -312,6 +399,7 @@ Documentos relacionados:
 ../testing/TEST-STRATEGY.md
 ../testing/LEXER-TESTS.md
 ../testing/PARSER-TESTS.md
+../testing/SEMANTIC-TESTS.md
 ../planning/DEFINITION-OF-DONE.md
 ../planning/FEATURE-STATUS.md
 ../../specification/README.md

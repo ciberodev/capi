@@ -1,0 +1,46 @@
+module app.semantic;
+import app.util;
+import app.prelude.*;
+
+class Text {}
+class Cliente {
+    nome : Text;
+    const KIND : Text = 1;
+    let cached = 1;
+    constructor(nome : Text) {
+        let local = nome;
+        local;
+    }
+    function getNome(fallback : Text) : Text {
+        let local = fallback;
+        if (local) {
+            let nested = local;
+            nested;
+        }
+        while (local) {
+            let loopValue = local;
+            loopValue;
+            break;
+        }
+        return local;
+    }
+}
+
+interface Nomeavel {}
+trait Logavel {}
+const DEFAULT = 1;
+let globalValue = DEFAULT;
+
+function helper(value : Cliente) : Cliente {
+    return value;
+}
+
+function main(param : Cliente) : Cliente {
+    let globalValue = param;
+    {
+        let inner = globalValue;
+        inner;
+    }
+    helper(globalValue);
+    return globalValue;
+}

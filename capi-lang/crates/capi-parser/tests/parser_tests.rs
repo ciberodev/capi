@@ -1,5 +1,6 @@
-use capi_ast::{dump_ast, Decl, Expr, MemberDecl, Stmt, TypeSyntax};
-use capi_lexer::{lex, Operator};
+use capi_ast::{dump_ast, Decl, Expr, MemberDecl, Pattern, Stmt, TypeSyntax};
+use capi_diagnostics::{LabelStyle, Severity};
+use capi_lexer::{lex, Keyword, LiteralKind, Operator};
 use capi_parser::{parse, ParseOutput};
 use capi_source::SourceMap;
 
@@ -70,6 +71,19 @@ fn assert_ast_dump_matches(source: &str, expected: &str) {
 }
 
 #[test]
+fn parses_empty_unit_and_preserves_source_id() {
+    let parsed = parse_valid("");
+    let root = parsed.output.ast().root();
+
+    assert_eq!(root.source.raw(), 0);
+    assert!(root.module.is_none());
+    assert!(root.imports.is_empty());
+    assert!(root.declarations.is_empty());
+    assert_eq!(root.span.start().raw(), 0);
+    assert_eq!(root.span.end().raw(), 0);
+}
+
+#[test]
 fn parses_declarations() {
     let parsed = parse_valid(
         r#"
@@ -94,6 +108,72 @@ fn parses_declarations() {
     assert!(matches!(root.declarations[3], Decl::Interface(_)));
     assert!(matches!(root.declarations[4], Decl::Trait(_)));
     assert!(matches!(root.declarations[5], Decl::Class(_)));
+}
+
+#[test]
+fn parses_unit_order_and_wildcard_imports() {
+    let parsed = parse_valid(
+        r#"
+        module banco.contas;
+        import banco.Cliente;
+        import banco.*;
+        function main() {}
+        class Conta {}
+        "#,
+    );
+
+    let root = parsed.output.ast().root();
+    assert!(root.module.is_some());
+    assert_eq!(root.imports.len(), 2);
+    assert_eq!(root.imports[0].path.segments[1].text, "Cliente");
+    assert!(!root.imports[0].wildcard);
+    assert_eq!(root.imports[1].path.segments[0].text, "banco");
+    assert!(root.imports[1].wildcard);
+    assert_eq!(root.declarations.len(), 2);
+    assert!(matches!(root.declarations[0], Decl::Function(_)));
+    assert!(matches!(root.declarations[1], Decl::Class(_)));
+}
+
+#[test]
+fn parses_declaration_prefixes_generics_and_global_items() {
+    let parsed = parse_valid(
+        r#"
+        @service("accounts")
+        public final function make<T>(value : T = 1) : T {}
+        @data()
+        private class Box<T> {}
+        "#,
+    );
+
+    let root = parsed.output.ast().root();
+    let Decl::Function(function) = &root.declarations[0] else {
+        panic!("expected function");
+    };
+    assert_eq!(function.prefix.attributes.len(), 1);
+    assert_eq!(
+        function.prefix.attributes[0].path.segments[0].text,
+        "service"
+    );
+    assert_eq!(function.prefix.attributes[0].arguments.len(), 1);
+    assert_eq!(
+        function
+            .prefix
+            .modifiers
+            .iter()
+            .map(|modifier| modifier.keyword)
+            .collect::<Vec<_>>(),
+        vec![Keyword::Public, Keyword::Final]
+    );
+    assert_eq!(function.generic_params[0].name.text, "T");
+    assert!(function.params[0].default_value.is_some());
+    assert!(function.return_type.is_some());
+
+    let Decl::Class(class) = &root.declarations[1] else {
+        panic!("expected class");
+    };
+    assert_eq!(class.prefix.attributes.len(), 1);
+    assert_eq!(class.prefix.modifiers[0].keyword, Keyword::Private);
+    assert_eq!(class.generic_params[0].name.text, "T");
 }
 
 #[test]
@@ -137,6 +217,196 @@ fn parses_expressions() {
 }
 
 #[test]
+fn parses_statement_forms() {
+    let parsed = parse_valid(
+        r#"
+        function main() {
+            {}
+            let value = 1;
+            const fixed = value;
+            value;
+            return;
+            return value;
+            break;
+            continue;
+            if (value) { value; } else if (fixed) { fixed; } else { 0; }
+            switch (value) { case 1: value; default: fixed; }
+            while (value) { break; }
+            for (let i = 0; i; i = i + 1) { continue; }
+            foreach (item in value) { item; }
+            match (value) { case Cliente(item): item; case _: value; }
+            unsafe { value; }
+        }
+        "#,
+    );
+
+    let Decl::Function(function) = &parsed.output.ast().root().declarations[0] else {
+        panic!("expected function");
+    };
+    let body = function.body.as_ref().expect("function body");
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Block(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Let(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Const(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Expr { .. })));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Return { value: None, .. })));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Return { value: Some(_), .. })));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Break(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Continue(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::If(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Switch(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::While(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::For(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Foreach(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::Match(_))));
+    assert!(body
+        .statements
+        .iter()
+        .any(|stmt| matches!(stmt, Stmt::UnsafeBlock(_))));
+}
+
+#[test]
+fn parses_expression_forms_and_literals() {
+    let parsed = parse_valid(
+        r#"
+        function main() {
+            let a = 1;
+            let b = 3.14;
+            let c = "text";
+            let d = 'x';
+            let e = true;
+            let f = this;
+            let g = ();
+            let h = (a);
+            let i = (a, b);
+            let j = call();
+            let k = call(a, b);
+            let l = call(a)(b);
+            let m = (object).field;
+            let n = array[0];
+            let o = new Cliente(a);
+            let p = !a;
+            let q = a = b = c;
+        }
+        "#,
+    );
+
+    let Decl::Function(function) = &parsed.output.ast().root().declarations[0] else {
+        panic!("expected function");
+    };
+    let body = function.body.as_ref().expect("function body");
+    assert!(matches!(
+        local_initializer(&body.statements[0]),
+        Some(Expr::Literal(literal)) if literal.kind == LiteralKind::Integer
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[1]),
+        Some(Expr::Literal(literal)) if literal.kind == LiteralKind::Float
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[2]),
+        Some(Expr::Literal(literal)) if literal.kind == LiteralKind::String
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[3]),
+        Some(Expr::Literal(literal)) if literal.kind == LiteralKind::Char
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[4]),
+        Some(Expr::Literal(literal)) if literal.kind == LiteralKind::Bool
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[5]),
+        Some(Expr::Name(path)) if path.segments[0].text == "this"
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[6]),
+        Some(Expr::Tuple { elements, .. }) if elements.is_empty()
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[7]),
+        Some(Expr::Group { .. })
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[8]),
+        Some(Expr::Tuple { elements, .. }) if elements.len() == 2
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[9]),
+        Some(Expr::Call(call)) if call.arguments.is_empty()
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[10]),
+        Some(Expr::Call(call)) if call.arguments.len() == 2
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[11]),
+        Some(Expr::Call(call)) if matches!(&*call.callee, Expr::Call(_))
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[12]),
+        Some(Expr::Member(_))
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[13]),
+        Some(Expr::Index(_))
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[14]),
+        Some(Expr::New(_))
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[15]),
+        Some(Expr::Unary(unary)) if unary.op == Operator::Bang
+    ));
+    assert!(matches!(
+        local_initializer(&body.statements[16]),
+        Some(Expr::Assign(assign)) if matches!(&*assign.value, Expr::Assign(_))
+    ));
+}
+
+#[test]
 fn parses_operator_precedence() {
     let parsed = parse_valid("function main() { let x = a + b * c == d || e; }");
 
@@ -160,6 +430,49 @@ fn parses_operator_precedence() {
         panic!("expected multiplication nested under addition");
     };
     assert_eq!(mul_expr.op, Operator::Star);
+}
+
+#[test]
+fn parses_each_precedence_level_and_postfix_associativity() {
+    let parsed = parse_valid(
+        "function main() { let x = a || b && c == d < e + f * -g; let y = (object).field[0](arg); }",
+    );
+
+    let x = function_local_initializer(&parsed, 0);
+    let Expr::Binary(or_expr) = x else {
+        panic!("expected || expression");
+    };
+    assert_eq!(or_expr.op, Operator::PipePipe);
+    let Expr::Binary(and_expr) = &*or_expr.right else {
+        panic!("expected && expression");
+    };
+    assert_eq!(and_expr.op, Operator::AmpAmp);
+    let Expr::Binary(eq_expr) = &*and_expr.right else {
+        panic!("expected equality expression");
+    };
+    assert_eq!(eq_expr.op, Operator::EqualEqual);
+    let Expr::Binary(lt_expr) = &*eq_expr.right else {
+        panic!("expected relational expression");
+    };
+    assert_eq!(lt_expr.op, Operator::Less);
+    let Expr::Binary(add_expr) = &*lt_expr.right else {
+        panic!("expected additive expression");
+    };
+    assert_eq!(add_expr.op, Operator::Plus);
+    let Expr::Binary(mul_expr) = &*add_expr.right else {
+        panic!("expected multiplicative expression");
+    };
+    assert_eq!(mul_expr.op, Operator::Star);
+    assert!(matches!(&*mul_expr.right, Expr::Unary(_)));
+
+    let y = function_local_initializer(&parsed, 1);
+    let Expr::Call(call) = y else {
+        panic!("expected call expression");
+    };
+    let Expr::Index(index) = &*call.callee else {
+        panic!("expected index before call");
+    };
+    assert!(matches!(&*index.base, Expr::Member(_)));
 }
 
 #[test]
@@ -200,6 +513,43 @@ fn parses_types() {
 }
 
 #[test]
+fn parses_interface_trait_and_member_signatures() {
+    let parsed = parse_valid(
+        r#"
+        interface Nomeavel {
+            function nome() : String;
+            function apelido() : String;
+        }
+        trait Logavel {
+            function log(message : String);
+            function enabled() : Bool { return true; }
+        }
+        "#,
+    );
+
+    let root = parsed.output.ast().root();
+    let Decl::Interface(interface) = &root.declarations[0] else {
+        panic!("expected interface");
+    };
+    assert_eq!(interface.members.len(), 2);
+    assert!(matches!(interface.members[0], MemberDecl::Method(_)));
+    let MemberDecl::Method(signature) = &interface.members[0] else {
+        panic!("expected method signature");
+    };
+    assert!(signature.body.is_none());
+    assert!(signature.return_type.is_some());
+
+    let Decl::Trait(trait_decl) = &root.declarations[1] else {
+        panic!("expected trait");
+    };
+    assert_eq!(trait_decl.members.len(), 2);
+    let MemberDecl::Method(default_method) = &trait_decl.members[1] else {
+        panic!("expected default trait method");
+    };
+    assert!(default_method.body.is_some());
+}
+
+#[test]
 fn parses_classes() {
     let parsed = parse_valid(
         r#"
@@ -226,6 +576,26 @@ fn parses_classes() {
 }
 
 #[test]
+fn reports_structured_syntax_diagnostics() {
+    let parsed = parse_text("function f(value) { let x = ; }");
+
+    assert!(!parsed.output.diagnostics().is_empty());
+    for diagnostic in parsed.output.diagnostics() {
+        assert_eq!(diagnostic.severity(), Severity::Error);
+        let span = diagnostic
+            .primary_span()
+            .expect("parser diagnostic should have primary span");
+        assert!(
+            diagnostic
+                .labels()
+                .iter()
+                .any(|label| label.span() == span && label.style() == LabelStyle::Primary),
+            "parser diagnostic should include primary label"
+        );
+    }
+}
+
+#[test]
 fn reports_syntax_errors() {
     let parsed = parse_text("function () { let x = ; }");
 
@@ -237,6 +607,24 @@ fn reports_syntax_errors() {
         .diagnostics()
         .iter()
         .any(|diagnostic| diagnostic.message().contains("expected function name")));
+}
+
+#[test]
+fn reports_additional_negative_syntax_cases() {
+    for (source, code) in [
+        ("public", "PARSE0004"),
+        ("@decorator()", "PARSE0004"),
+        ("function main(a : Int32,, b : Int32) {}", "PARSE0002"),
+        ("function main() :", "PARSE0002"),
+        ("class C { constructor(a : Int32); }", "PARSE0004"),
+        ("class C { field : Int32 }", "PARSE0002"),
+        ("function main() { call(,); }", "PARSE0006"),
+        ("function main() { array[0; }", "PARSE0002"),
+        ("function main() { match (x) { case : x; } }", "PARSE0001"),
+    ] {
+        let parsed = parse_text(source);
+        assert_has_code(&parsed, code);
+    }
 }
 
 #[test]
@@ -252,6 +640,39 @@ fn classifies_syntax_diagnostics() {
 
     let missing_separator = parse_text("function f(a : Int32 b : String) {}");
     assert_has_code(&missing_separator, "PARSE0007");
+}
+
+#[test]
+fn recovers_from_top_level_member_and_type_errors() {
+    let parsed = parse_text(
+        r#"
+        @
+        function () { let broken = ; }
+        function ok(value : List<String) {
+            let y = 1;
+        }
+        class C {
+            @
+            function good() {}
+        }
+        "#,
+    );
+
+    assert!(!parsed.output.diagnostics().is_empty());
+    assert!(parsed
+        .output
+        .ast()
+        .root()
+        .declarations
+        .iter()
+        .any(|decl| matches!(decl, Decl::Function(function) if function.name.text == "ok")));
+    assert!(parsed
+        .output
+        .ast()
+        .root()
+        .declarations
+        .iter()
+        .any(|decl| matches!(decl, Decl::Class(_))));
 }
 
 #[test]
@@ -275,6 +696,40 @@ fn recovers_after_syntax_errors() {
     assert_eq!(body.statements.len(), 4);
     assert!(matches!(body.statements[1], Stmt::Let(_)));
     assert!(matches!(body.statements[3], Stmt::Return { .. }));
+}
+
+#[test]
+fn parses_patterns_in_match_and_foreach() {
+    let parsed = parse_valid(
+        r#"
+        function main(value : Cliente) {
+            foreach (item in value) { item; }
+            match (value) {
+                case Cliente(name, _): name;
+                case 1: value;
+            }
+        }
+        "#,
+    );
+
+    let Decl::Function(function) = &parsed.output.ast().root().declarations[0] else {
+        panic!("expected function");
+    };
+    let body = function.body.as_ref().expect("function body");
+    let Stmt::Foreach(foreach) = &body.statements[0] else {
+        panic!("expected foreach");
+    };
+    assert!(matches!(foreach.binding, Pattern::Path(_)));
+
+    let Stmt::Match(match_stmt) = &body.statements[1] else {
+        panic!("expected match");
+    };
+    assert_eq!(match_stmt.arms.len(), 2);
+    assert!(matches!(
+        match_stmt.arms[0].pattern,
+        Pattern::Constructor { .. }
+    ));
+    assert!(matches!(match_stmt.arms[1].pattern, Pattern::Literal(_)));
 }
 
 #[test]

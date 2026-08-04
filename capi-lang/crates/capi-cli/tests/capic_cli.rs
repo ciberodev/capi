@@ -22,7 +22,7 @@ fn help_prints_usage() {
     assert!(output.status.success());
     assert_eq!(
         stdout(&output),
-        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic arquivo.capi\n"
+        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic arquivo.capi\n"
     );
     assert!(stderr(&output).is_empty());
 }
@@ -116,6 +116,20 @@ fn emit_tokens_returns_failure_for_lexical_error() {
 }
 
 #[test]
+fn emit_tokens_returns_failure_for_invalid_utf8_source() {
+    let path = std::env::temp_dir().join("capic-cli-invalid-utf8.cap");
+    std::fs::write(&path, [0xff, 0xfe, 0xfd]).expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "tokens", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("is not valid UTF-8"));
+}
+
+#[test]
 fn emit_ast_prints_ast_dump() {
     let path = std::env::temp_dir().join("capic-cli-emit-ast.cap");
     std::fs::write(&path, "function main() { let value = 1; }").expect("fixture should be written");
@@ -137,6 +151,59 @@ fn emit_ast_returns_failure_for_syntax_error() {
     std::fs::write(&path, "function () { let value = ; }").expect("fixture should be written");
 
     let output = run_capic(&["--emit", "ast", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("CompilationUnit"));
+    assert!(stderr.contains("error[PARSE0002]: expected function name"));
+    assert!(stderr.contains("error[PARSE0006]: expected expression"));
+}
+
+#[test]
+fn emit_hir_prints_resolved_hir_dump() {
+    let path = std::env::temp_dir().join("capic-cli-emit-hir.cap");
+    std::fs::write(&path, "function main() { let value = 1; value; }")
+        .expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "hir", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout.contains("Unit unit0"));
+    assert!(stdout.contains("Function id=0 name=main"));
+    assert!(stdout.contains("Symbols"));
+    assert!(stdout.contains("name=value"));
+    assert!(stdout.contains("Bindings"));
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn emit_hir_returns_failure_for_semantic_error() {
+    let path = std::env::temp_dir().join("capic-cli-semantic-fail.cap");
+    std::fs::write(&path, "function main() { missing; }").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "hir", path.to_str().unwrap()]);
+    let stdout = stdout(&output);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout.contains("Unit unit0"));
+    assert!(stdout.contains("Bindings"));
+    assert!(stdout.contains("not_found"));
+    assert!(stderr.contains("error[SEM0002]: unresolved name `missing`"));
+}
+
+#[test]
+fn emit_hir_returns_failure_for_syntax_error() {
+    let path = std::env::temp_dir().join("capic-cli-hir-syntax-fail.cap");
+    std::fs::write(&path, "function () { let value = ; }").expect("fixture should be written");
+
+    let output = run_capic(&["--emit", "hir", path.to_str().unwrap()]);
     let stdout = stdout(&output);
     let stderr = stderr(&output);
 

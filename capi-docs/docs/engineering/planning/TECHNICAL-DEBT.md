@@ -47,14 +47,14 @@ Dívida técnica não pode ser usada para:
 ```text
 Dívidas técnicas bloqueantes: nenhuma
 Dívidas técnicas aceitas: nenhuma
-Itens monitorados: 4
+Itens monitorados: 3
 ```
 
-Até a conclusão do Stage 2, não há dívida técnica aceita que bloqueie avanço do
+Até a conclusão do Stage 3, não há dívida técnica aceita que bloqueie avanço do
 projeto.
 
 Os itens abaixo são limitações ou decisões conservadoras monitoradas. Eles não
-invalidam os critérios de conclusão dos Stages 0, 1 ou 2.
+invalidam os critérios de conclusão dos Stages 0, 1, 2 ou 3.
 
 ---
 
@@ -64,8 +64,7 @@ invalidam os critérios de conclusão dos Stages 0, 1 ou 2.
 | --- | --- | --- | --- | --- | --- |
 | TD-W-001 | Política Unicode de identificadores é conservadora. | Evitar aceitar regras não definidas normativamente. | Pode exigir ampliação futura do lexer. | Especificação definir política final de identificadores Unicode. | Monitorado |
 | TD-W-002 | Recuperação sintática não é incremental nem sofisticada para IDE. | Stage 2 exige recuperação determinística básica, não LSP. | IDE futura exigirá estratégia própria. | Stage de ferramentas/LSP definir recuperação incremental. | Monitorado |
-| TD-W-003 | Lowering AST-HIR está documentado, mas implementação efetiva pertence ao Stage 3. | AST precisava ser desenhada para sua consumidora imediata. | Nenhum HIR disponível até Stage 3. | Implementar Stage 3. | Monitorado |
-| TD-W-004 | Dumps de tokens e AST são formatos iniciais de engenharia. | Necessários para validação e snapshots antes de formatos externos completos. | Mudanças futuras exigem atualização intencional de snapshots. | `OUTPUT-FORMATS.md` e flags de dump estruturadas no stage apropriado. | Monitorado |
+| TD-W-004 | Dumps de tokens, AST e HIR são formatos iniciais de engenharia. | Necessários para validação e snapshots antes de formatos externos completos. | Mudanças futuras exigem atualização intencional de snapshots. | `OUTPUT-FORMATS.md` e flags de dump estruturadas no stage apropriado. | Monitorado |
 
 ---
 
@@ -88,7 +87,9 @@ Status:
 
 ## 6. Dívidas Removidas
 
-Nenhuma dívida técnica removida registrada.
+| ID | Item | Remoção |
+| --- | --- | --- |
+| TD-W-003 | Ausência temporária de lowering AST-HIR antes do Stage 3. | Removido pela implementação de `capi-lowering`, `capi-hir` e testes de lowering no Stage 3. |
 
 ---
 
@@ -114,8 +115,19 @@ Nenhuma dívida técnica bloqueante aceita.
 Itens monitorados:
 
 - recuperação sintática não incremental;
-- lowering AST-HIR ainda não implementado;
 - formato inicial de dump de AST.
+
+### Stage 3
+
+Nenhuma dívida técnica bloqueante aceita.
+
+Itens monitorados:
+
+- formatos iniciais de dump de tokens, AST e HIR;
+- módulos/imports implementados no subconjunto inicial, sem graph completo de
+  módulos entre arquivos;
+- resolução de nomes limitada ao subconjunto inicial, antes de tipagem e
+  resolução completa de membros.
 
 ---
 

@@ -47,13 +47,12 @@ de impacto futuro. Dívidas aceitas ficam em `TECHNICAL-DEBT.md`.
 | ID | Risco | Probabilidade | Impacto | Status | Mitigação |
 | --- | --- | --- | --- | --- | --- |
 | R-001 | Divergência entre especificação, documentos de engenharia e implementação. | Média | Alto | Monitorado | Atualizar documentos bloqueantes e `FEATURE-STATUS.md` ao concluir cada entrega. |
-| R-002 | Crescimento do parser antes de HIR/semântica criar contratos instáveis. | Média | Médio | Monitorado | Manter AST estritamente sintática e adiar semântica para Stage 3+. |
 | R-003 | Formato de dump de AST mudar sem intenção e quebrar tooling futuro. | Média | Médio | Monitorado | Proteger com snapshots golden e tratar mudanças como alteração contratual. |
 | R-004 | Recuperação sintática atual ser confundida com recuperação sofisticada de IDE. | Média | Médio | Monitorado | Documentar limite do Stage 2 e reservar IDE/LSP para stage futuro. |
 | R-005 | Política Unicode conservadora de identificadores exigir migração posterior. | Média | Médio | Aberto | Revisitar quando nomes Unicode forem normativamente definidos. |
 | R-006 | Novas dependências externas serem introduzidas sem ADR ou revisão. | Baixa | Alto | Monitorado | Aplicar `DEPENDENCY-RULES.md`, `DEPENDENCIES.md` e `ADR-0013`. |
 | R-007 | MSRV ser elevada acidentalmente por ferramenta, dependência ou código novo. | Média | Médio | Monitorado | Preservar MSRV `1.88.0` até decisão formal. |
-| R-008 | Stages futuros de ownership e Domains exigirem ajustes no modelo de AST/HIR. | Média | Alto | Aberto | Definir HIR e lowering com rastreabilidade e semântica extensível. |
+| R-008 | Stages futuros de ownership e Domains exigirem ajustes no modelo de HIR. | Média | Alto | Aberto | Evoluir HIR preservando rastreabilidade, IDs e fronteiras entre `capi-hir`, `capi-lowering` e fases semânticas. |
 
 ---
 
@@ -65,28 +64,33 @@ de impacto futuro. Dívidas aceitas ficam em `TECHNICAL-DEBT.md`.
 | R-102 | Lexer aceitar entradas malformadas com panic. | Testes de entradas inválidas e recuperação léxica básica. |
 | R-103 | AST não preservar spans suficientes para diagnósticos futuros. | Spans por nó relevante e testes granulares adicionados. |
 | R-104 | Dump de AST não ser determinístico. | Implementação determinística e snapshots golden byte a byte. |
+| R-002 | Crescimento do parser antes de HIR/semântica criar contratos instáveis. | Stage 3 introduziu HIR, lowering, símbolos, escopos e resolução sem acoplar semântica à AST. |
+| R-105 | HIR ficar acoplada diretamente à estrutura da AST. | `capi-hir` separado como modelo puro e lowering movido para `capi-lowering`. |
+| R-106 | Resolução de nomes depender de ordem instável. | IDs internos, mapas ordenados e testes de determinismo adicionados. |
+| R-107 | Erros de resolução sem diagnósticos estruturados. | Diagnósticos `SEM0001`, `SEM0002` e `SEM0003` testados com spans e labels. |
 
 ---
 
 ## 5. Riscos Por Próximo Stage
 
-### Stage 3 — HIR e resolução de nomes
+### Stage 4 — Sistema de tipos
 
 Riscos prioritários:
 
-- definir HIR com acoplamento excessivo à AST;
-- perder spans ou origem AST durante lowering;
-- resolver nomes de forma dependente da ordem acidental de estruturas internas;
-- emitir diagnósticos de resolução sem códigos estruturados;
-- introduzir símbolos sem identidade estável.
+- tipos internos anteciparem decisões ainda não especificadas;
+- inferência depender de ordem acidental de resolução;
+- diagnósticos de tipo confundirem erro de resolução com erro de tipo;
+- generics iniciais criarem contratos incompatíveis com stages posteriores;
+- coerções implícitas serem aceitas antes de regras normativas suficientes.
 
 Mitigações esperadas:
 
-- preencher `HIR-MODEL.md`, `SYMBOL-MODEL.md`, `SCOPE-MODEL.md` e
-  `NAME-RESOLUTION.md` antes da implementação;
-- testar dumps determinísticos de HIR;
-- testar resolução válida, duplicada, inexistente e ambígua;
-- preservar rastreabilidade AST-HIR.
+- preencher `TYPE-MODEL.md`, `TYPE-INFERENCE.md`, `TYPE-CHECKING-PIPELINE.md`,
+  `TYPE-INTERNING.md` e `SUBTYPING-AND-COERCIONS.md` antes da implementação;
+- separar erros de resolução de erros de tipo;
+- testar inferência, checagem, coerções e diagnósticos de tipo por casos
+  pequenos e determinísticos;
+- preservar IDs e origem HIR nas estruturas de tipo.
 
 ---
 

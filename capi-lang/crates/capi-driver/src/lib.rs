@@ -6,7 +6,9 @@ use capi_ast::dump_ast;
 use capi_common::{ExitStatus, CAPI_VERSION};
 use capi_diagnostics::{Diagnostic, DiagnosticBag, DiagnosticCode, DiagnosticRenderer};
 use capi_lexer::{lex, Token, TokenKind};
+use capi_lowering::lower_ast;
 use capi_parser::parse;
+use capi_sema::{analyze_names, dump_resolved_hir};
 use capi_session::{CompilationSession, SessionOptions};
 use capi_source::SourceMap;
 
@@ -27,6 +29,8 @@ pub enum DriverRequest {
     EmitTokens { path: PathBuf },
     /// Emit AST for a source file.
     EmitAst { path: PathBuf },
+    /// Emit HIR for a source file.
+    EmitHir { path: PathBuf },
 }
 
 /// Structured response produced by the driver.
@@ -52,6 +56,15 @@ impl DriverResponse {
         Self {
             status: ExitStatus::Failure,
             stdout: String::new(),
+            stderr: stderr.into(),
+        }
+    }
+
+    /// Creates a failed response with stdout already produced before failure.
+    pub fn failure_with_output(stdout: impl Into<String>, stderr: impl Into<String>) -> Self {
+        Self {
+            status: ExitStatus::Failure,
+            stdout: stdout.into(),
             stderr: stderr.into(),
         }
     }
@@ -110,6 +123,7 @@ pub fn run(request: DriverRequest) -> DriverResponse {
         }
         DriverRequest::EmitTokens { path } => emit_tokens(path),
         DriverRequest::EmitAst { path } => emit_ast(path),
+        DriverRequest::EmitHir { path } => emit_hir(path),
     }
 }
 
@@ -119,7 +133,7 @@ pub fn initialize_session() -> CompilationSession {
 }
 
 fn help_text() -> &'static str {
-    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic arquivo.capi\n"
+    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic arquivo.capi\n"
 }
 
 fn emit_tokens(path: PathBuf) -> DriverResponse {
@@ -193,6 +207,68 @@ fn emit_ast(path: PathBuf) -> DriverResponse {
     } else {
         let stderr = render_diagnostics(session.diagnostics(), session.sources());
         DriverResponse::failure(stderr)
+    }
+}
+
+fn emit_hir(path: PathBuf) -> DriverResponse {
+    let mut session = initialize_session();
+    let source = match session.sources_mut().load_file(&path) {
+        Ok(source) => source,
+        Err(error) => {
+            let diagnostic =
+                Diagnostic::error(error.to_string()).with_code(DiagnosticCode::source(1));
+            session.diagnostics_mut().push(diagnostic);
+            return DriverResponse::failure(format!("error: {error}\n"));
+        }
+    };
+
+    let Some(file) = session.sources().get(source) else {
+        return DriverResponse::internal_error(
+            "internal compiler error: loaded source is missing\n",
+        );
+    };
+    let output = lex(source, file.text());
+    let (tokens, diagnostics) = output.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+
+    if session.diagnostics().has_errors() || session.diagnostics().has_internal_errors() {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return DriverResponse::failure(stderr);
+    }
+
+    let parsed = parse(source, &tokens, session.sources());
+    let (ast, diagnostics) = parsed.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+    if session.diagnostics().has_errors() || session.diagnostics().has_internal_errors() {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return DriverResponse::failure(format!("{}{}", dump_ast(&ast, session.sources()), stderr));
+    }
+
+    let lowered = lower_ast(&ast, session.sources());
+    let (hir, _ast_to_hir, diagnostics, blocked) = lowered.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+    let Some(hir) = hir else {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return if blocked || session.diagnostics().has_errors() {
+            DriverResponse::failure(stderr)
+        } else {
+            DriverResponse::internal_error("internal compiler error: HIR was not produced\n")
+        };
+    };
+
+    let semantic = analyze_names(&hir);
+    session
+        .diagnostics_mut()
+        .extend(semantic.diagnostics().iter().cloned());
+    let stdout = dump_resolved_hir(&hir, &semantic);
+    let stderr = render_diagnostics(session.diagnostics(), session.sources());
+
+    if session.diagnostics().has_internal_errors() {
+        DriverResponse::internal_error(stderr)
+    } else if session.diagnostics().has_errors() {
+        DriverResponse::failure_with_output(stdout, stderr)
+    } else {
+        DriverResponse::success(stdout)
     }
 }
 
@@ -291,6 +367,71 @@ mod tests {
         assert!(response.stdout().contains("FunctionDecl name=main"));
         assert!(response.stdout().contains("BinaryExpr op=Plus"));
         assert!(response.stderr().is_empty());
+    }
+
+    #[test]
+    fn emits_hir_for_source_text() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-hir.cap");
+        std::fs::write(&temp, "function main() { let value = 1; value; }")
+            .expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitHir { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Success);
+        assert!(response.stdout().contains("Unit unit0"));
+        assert!(response.stdout().contains("Function id=0 name=main"));
+        assert!(response.stdout().contains("Symbols"));
+        assert!(response.stdout().contains("Bindings"));
+        assert!(response.stderr().is_empty());
+    }
+
+    #[test]
+    fn emit_hir_reports_duplicate_symbols() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-hir-duplicate.cap");
+        std::fs::write(&temp, "function main() { let value = 1; let value = 2; }")
+            .expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitHir { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Failure);
+        assert!(response.stdout().contains("Symbols"));
+        assert!(response.stderr().contains("error[SEM0001]"));
+        assert!(response.stderr().contains("duplicate symbol `value`"));
+    }
+
+    #[test]
+    fn emit_hir_reports_unresolved_references() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-hir-unresolved.cap");
+        std::fs::write(&temp, "function main() { missing; }").expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitHir { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Failure);
+        assert!(response.stdout().contains("Bindings"));
+        assert!(response.stdout().contains("not_found"));
+        assert!(response.stderr().contains("error[SEM0002]"));
+        assert!(response.stderr().contains("unresolved name `missing`"));
+    }
+
+    #[test]
+    fn emit_hir_reports_ambiguous_references() {
+        let temp = std::env::temp_dir().join("capi-driver-emit-hir-ambiguous.cap");
+        std::fs::write(
+            &temp,
+            "function main() { let value = 1; let value = 2; value; }",
+        )
+        .expect("fixture should be written");
+
+        let response = run(DriverRequest::EmitHir { path: temp.clone() });
+
+        let _ = std::fs::remove_file(temp);
+        assert_eq!(response.status(), ExitStatus::Failure);
+        assert!(response.stdout().contains("ambiguous("));
+        assert!(response.stderr().contains("error[SEM0003]"));
+        assert!(response.stderr().contains("ambiguous reference `value`"));
     }
 
     #[test]

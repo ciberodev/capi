@@ -141,6 +141,14 @@ jobs:
           printf '%s\n' "$output" | grep "FunctionDecl name=main"
           printf '%s\n' "$output" | grep "ClassDecl name=Cliente"
 
+      - name: Check HIR dump
+        run: |
+          output="$(cargo run -p capi-cli --locked -- --emit hir tests/semantic/pass/basic.cap)"
+          printf '%s\n' "$output" | grep "Unit unit0"
+          printf '%s\n' "$output" | grep "Scopes"
+          printf '%s\n' "$output" | grep "Symbols"
+          printf '%s\n' "$output" | grep "Bindings"
+
       - name: Check missing source error
         run: |
           set +e

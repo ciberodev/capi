@@ -8,7 +8,8 @@ as fases do compilador e a conformidade com a especificação. A partir do Stage
 1, esta área documenta os testes obrigatórios do lexer e dos componentes de
 fonte usados pelo frontend inicial. A partir do Stage 2, também documenta os
 testes obrigatórios do parser, da AST, da recuperação sintática e do dump de
-AST.
+AST. A partir do Stage 3, documenta os testes de lowering AST-HIR, HIR, escopos,
+símbolos, resolução de nomes, diagnósticos semânticos e `capic --emit hir`.
 
 ---
 
@@ -19,6 +20,7 @@ AST.
 | `TEST-STRATEGY.md` | Aprovado | Documento de engenharia bloqueante | Define a estratégia oficial de testes, comandos de validação, camadas de teste, suíte mínima do Stage 0, critérios de CI e evolução da suíte nos próximos stages. |
 | `LEXER-TESTS.md` | Aprovado | Documento de testes do Stage 1 | Define cobertura obrigatória para `SourceMap`, spans, Unicode, tokenização, diagnósticos léxicos, entradas inválidas, snapshots e `capic --emit tokens`. |
 | `PARSER-TESTS.md` | Aprovado | Documento de testes do Stage 2 | Define cobertura obrigatória para parser, AST, precedência, tipos, classes, diagnósticos sintáticos, recuperação, spans, snapshots e `capic --emit ast`. |
+| `SEMANTIC-TESTS.md` | Aprovado | Documento de testes do Stage 3 | Define cobertura obrigatória para lowering, HIR, escopos, símbolos, resolução de nomes, diagnósticos semânticos, snapshots e `capic --emit hir`. |
 
 ---
 
@@ -32,7 +34,6 @@ AST.
 | `COMPILE-PASS-TESTS.md` | Definir programas Capi que devem ser aceitos pelo compilador. |
 | `COMPILE-FAIL-TESTS.md` | Definir programas Capi que devem ser rejeitados com erro esperado. |
 | `RUN-PASS-TESTS.md` | Definir programas Capi que devem compilar, executar e produzir resultado esperado. |
-| `SEMANTIC-TESTS.md` | Detalhar cobertura de resolução, tipos e regras semânticas. |
 | `OWNERSHIP-TESTS.md` | Detalhar testes de ownership, borrowing, lifetime e modelos relacionados quando forem implementados. |
 | `MIR-TESTS.md` | Definir validação de MIR, passes e invariantes intermediários. |
 | `CODEGEN-TESTS.md` | Definir testes de geração de código e integração futura com backend. |
@@ -110,6 +111,27 @@ O mínimo demonstrável inclui:
 * snapshots golden para o dump de AST;
 * teste de CLI para `capic --emit ast arquivo.capi`.
 
+### Stage 3
+
+No Stage 3, a suíte passa a validar HIR, lowering e a primeira análise
+semântica.
+
+O mínimo demonstrável inclui:
+
+* testes de lowering em `capi-lowering`;
+* testes de IDs HIR determinísticos;
+* testes de preservação de `SourceId`, spans e `AstToHirMap`;
+* testes de HIR inicial e dump determinístico;
+* testes de `ScopeGraph` para o subconjunto inicial;
+* testes de `SymbolTable`, `SymbolId`, namespaces e duplicidade;
+* testes de resolução de nomes para valores, tipos, módulos/imports e patterns;
+* testes de referências inexistentes;
+* testes de ambiguidades;
+* testes de diagnósticos semânticos estruturados `SEM`;
+* fixtures semânticas em `capi-lang/tests/semantic/`;
+* snapshots de HIR inicial e HIR resolvida;
+* teste de CLI para `capic --emit hir arquivo.capi`.
+
 ---
 
 ## Comandos canônicos de validação
@@ -124,10 +146,17 @@ cargo run -p capi-cli -- --help
 cargo run -p capi-cli -- --version
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
 ```
 
-Esses comandos são a base de validação usada para considerar os Stages 1 e 2
+Esses comandos são a base de validação usada para considerar os Stages 1, 2 e 3
 concluídos localmente.
+
+A validação consolidada do workspace é:
+
+```bash
+./scripts/check.sh
+```
 
 Quando a validação precisar reproduzir a CI com lockfile estrito, use a variante
 `--locked` dos comandos Cargo e o script local de CI, se disponível:
@@ -187,6 +216,36 @@ intencional no contrato textual da AST.
 
 ---
 
+## Organização dos testes semânticos
+
+Os testes de HIR, lowering e análise semântica inicial usam cinco camadas:
+
+| Camada | Local | Finalidade |
+| --- | --- | --- |
+| Lowering | `capi-lang/crates/capi-lowering/tests/lowering_tests.rs` | Validar `SourceMap -> Lexer -> Parser -> AST -> HIR`, IDs HIR, spans, `AstToHirMap` e bloqueio por AST inválida. |
+| Integração semântica | `capi-lang/crates/capi-sema/tests/semantic_tests.rs` | Validar escopos, símbolos, resolução, diagnósticos e dumps resolvidos. |
+| Fixtures pass/fail | `capi-lang/tests/semantic/pass/` e `capi-lang/tests/semantic/fail/` | Validar programas aceitos e rejeitados pelo subconjunto semântico inicial. |
+| Snapshots | `capi-lang/tests/semantic/snapshots/` | Validar saída determinística de HIR inicial e HIR resolvida. |
+| CLI/driver | `capi-lang/crates/capi-cli/tests/` e `capi-lang/crates/capi-driver/src/lib.rs` | Validar comportamento observável de `capic --emit hir`. |
+
+Os dados de teste ficam em:
+
+```text
+capi-lang/tests/semantic/pass/
+capi-lang/tests/semantic/fail/
+capi-lang/tests/semantic/snapshots/
+```
+
+Fixtures `pass/` não devem produzir diagnósticos semânticos. Fixtures `fail/`
+devem produzir diagnósticos estruturados, com código, severidade e span
+primário.
+
+Testes semânticos devem consumir HIR por `capi-hir` e executar o lowering por
+`capi-lowering`. A HIR não deve depender diretamente da estrutura da AST após o
+lowering.
+
+---
+
 ## Evolução da suíte
 
 A suíte deve crescer junto com as fases do compilador.
@@ -225,6 +284,11 @@ Documentos relacionados:
 ../compiler/frontend/AST-MODEL.md
 ../compiler/frontend/PARSER-IMPLEMENTATION.md
 ../compiler/frontend/PARSER-RECOVERY.md
+../compiler/frontend/AST-LOWERING.md
+../compiler/semantic/HIR-MODEL.md
+../compiler/semantic/SCOPE-MODEL.md
+../compiler/semantic/SYMBOL-MODEL.md
+../compiler/semantic/NAME-RESOLUTION.md
 ../compiler/source/SOURCE-MAP.md
 ../compiler/source/SPANS-AND-LOCATIONS.md
 ../planning/DEFINITION-OF-DONE.md
@@ -250,14 +314,20 @@ Para entender a estratégia de testes, leia nesta ordem:
 8. `../compiler/frontend/AST-MODEL.md`
 9. `../compiler/frontend/PARSER-IMPLEMENTATION.md`
 10. `../compiler/frontend/PARSER-RECOVERY.md`
-11. `../build-and-ci/BUILD-SYSTEM.md`
-12. `../planning/DEFINITION-OF-DONE.md`
-13. `../architecture/COMPILATION-PIPELINE.md`
-14. `../architecture/COMPILER-ARCHITECTURE.md`
+11. `../compiler/frontend/AST-LOWERING.md`
+12. `SEMANTIC-TESTS.md`
+13. `../compiler/semantic/HIR-MODEL.md`
+14. `../compiler/semantic/SCOPE-MODEL.md`
+15. `../compiler/semantic/SYMBOL-MODEL.md`
+16. `../compiler/semantic/NAME-RESOLUTION.md`
+17. `../build-and-ci/BUILD-SYSTEM.md`
+18. `../planning/DEFINITION-OF-DONE.md`
+19. `../architecture/COMPILATION-PIPELINE.md`
+20. `../architecture/COMPILER-ARCHITECTURE.md`
 
 Essa ordem parte da política geral, passa pelas suítes léxica e sintática dos
-Stages 1 e 2 e depois conecta a validação ao compilador, ao build, aos critérios
-de aceite e à arquitetura.
+Stages 1 e 2, entra na suíte semântica do Stage 3 e depois conecta a validação
+ao compilador, ao build, aos critérios de aceite e à arquitetura.
 
 ---
 

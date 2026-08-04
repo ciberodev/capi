@@ -15,8 +15,11 @@ capi-ast = { path = "crates/capi-ast" }
 capi-common = { path = "crates/capi-common" }
 capi-diagnostics = { path = "crates/capi-diagnostics" }
 capi-driver = { path = "crates/capi-driver" }
+capi-hir = { path = "crates/capi-hir" }
 capi-lexer = { path = "crates/capi-lexer" }
+capi-lowering = { path = "crates/capi-lowering" }
 capi-parser = { path = "crates/capi-parser" }
+capi-sema = { path = "crates/capi-sema" }
 capi-session = { path = "crates/capi-session" }
 capi-source = { path = "crates/capi-source" }
 

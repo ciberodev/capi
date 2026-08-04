@@ -1,0 +1,8 @@
+class Pair {}
+
+function main(value : Pair) {
+    match (value) {
+        case Pair(left, left):
+            left;
+    }
+}

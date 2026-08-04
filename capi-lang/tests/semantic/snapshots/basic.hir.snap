@@ -1,0 +1,22 @@
+Unit unit0 source=0 module=app.main span=0..103
+  Import import0 path=app.util span=17..33
+  Class item0 name=Cliente symbol=<pending>
+  Function id=1 name=main params=0 symbol=<pending>
+    Block block0 span=69..102
+      Local local0 name=value symbol=<pending>
+      Path expr1 value binding=<pending>
+Scopes
+  scope0 kind=Global parent=<none> owner=Global
+  scope1 kind=Module parent=scope0 owner=Unit(0)
+  scope2 kind=Type parent=scope1 owner=Item(HirItemId(0))
+  scope3 kind=Member parent=scope2 owner=Item(HirItemId(0))
+  scope4 kind=Function parent=scope1 owner=Item(HirItemId(1))
+  scope5 kind=Block parent=scope4 owner=Block(HirBlockId(0))
+Symbols
+  sym0 kind=Import ns=Module name=util scope=scope1 decl=Import(HirImportId(0))
+  sym1 kind=Class ns=Type name=Cliente scope=scope1 decl=Item(HirItemId(0))
+  sym2 kind=Function ns=Value name=main scope=scope1 decl=Item(HirItemId(1))
+  sym3 kind=Local ns=Value name=value scope=scope5 decl=Local(HirLocalId(0))
+Bindings
+  Import(HirImportId(0)) -> sym0
+  Expr(HirExprId(1)) -> sym3

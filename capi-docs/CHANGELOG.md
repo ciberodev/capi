@@ -8,6 +8,59 @@ quando houver política de release ou changelog específico.
 
 ---
 
+## 2026-08-03 — Consolidação documental do Stage 3
+
+### Adicionado
+
+* Documentos de semântica inicial:
+  * `docs/engineering/compiler/semantic/HIR-MODEL.md`;
+  * `docs/engineering/compiler/semantic/SYMBOL-MODEL.md`;
+  * `docs/engineering/compiler/semantic/SCOPE-MODEL.md`;
+  * `docs/engineering/compiler/semantic/NAME-RESOLUTION.md`.
+* Documento de testes semânticos:
+  * `docs/engineering/testing/SEMANTIC-TESTS.md`.
+
+### Atualizado
+
+* `docs/engineering/compiler/frontend/AST-LOWERING.md` para refletir `capi-lowering` como crate de lowering e `capi-hir` como modelo puro.
+* `docs/README.md` para registrar os Stages 0, 1, 2 e 3 como concluídos, incluir a rota de leitura do Stage 3 e apontar o Stage 4 como próximo stage planejado.
+* `docs/engineering/README.md` para refletir HIR, lowering, semântica inicial e os documentos ativos do Stage 3.
+* `docs/engineering/compiler/README.md` para promover HIR, símbolos, escopos e resolução de nomes a documentos ativos.
+* `docs/engineering/testing/README.md` para promover `SEMANTIC-TESTS.md` a documento ativo do Stage 3.
+* Documentos de planejamento:
+  * `docs/engineering/planning/FEATURE-STATUS.md`;
+  * `docs/engineering/planning/IMPLEMENTATION-ORDER.md`;
+  * `docs/engineering/planning/MILESTONES.md`;
+  * `docs/engineering/planning/README.md`;
+  * `docs/engineering/planning/RISK-REGISTER.md`;
+  * `docs/engineering/planning/ROADMAP.md`;
+  * `docs/engineering/planning/TECHNICAL-DEBT.md`.
+* `README.md` da raiz de `capi-docs` para refletir o Stage 3, `capic --emit hir arquivo.capi`, `capi-hir`, `capi-lowering`, `capi-sema` e o próximo Stage 4.
+* Status dos documentos obrigatórios do Stage 3 de `Proposto` para `Aprovado`.
+
+### Registrado
+
+* Critérios de conclusão do Stage 3:
+  * todos os nomes do subconjunto inicial são resolvidos;
+  * erros de resolução são diagnosticados;
+  * a HIR não depende diretamente da estrutura da AST;
+  * símbolos possuem identidade interna estável;
+  * o resultado esperado pode ser obtido por `capic --emit hir arquivo.capi`;
+  * todos os testes obrigatórios passam.
+* Resultado demonstrável da HIR resolvida:
+
+```bash
+capic --emit hir arquivo.capi
+```
+
+* Próximo stage planejado:
+
+```text
+Stage 4 — Sistema de tipos
+```
+
+---
+
 ## 2026-08-02 — Consolidação documental do Stage 2
 
 ### Adicionado

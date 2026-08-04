@@ -29,14 +29,15 @@ documentos bloqueantes do stage atual.
 | --- | --- | --- |
 | `architecture/` | Ativa | Arquitetura do compilador, workspace, componentes, dependências e pipeline de compilação. |
 | `build-and-ci/` | Ativa | Sistema de build, comandos canônicos, scripts, CI, artefatos e validação automatizada. |
-| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, lexer, parser, AST e fases futuras. |
+| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, lexer, parser, AST, HIR e semântica inicial. |
 | `development/` | Ativa | Ambiente local, build a partir do código-fonte, padrões de código e guia de estilo Rust. |
 | `planning/` | Ativa | Definition of Done, status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica. |
-| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0, testes léxicos do Stage 1 e testes sintáticos do Stage 2. |
+| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0, testes léxicos, sintáticos e semânticos dos Stages 1 a 3. |
 
 Essas áreas possuem documentação preenchida e fazem parte da implementação
-ativa. Os documentos obrigatórios dos Stages 1 e 2 estão aprovados e servem
-como contrato operacional para o frontend inicial.
+ativa. Os documentos obrigatórios dos Stages 1, 2 e 3 estão aprovados e servem
+como contrato operacional para o frontend inicial e a primeira análise
+semântica.
 
 ---
 
@@ -139,22 +140,51 @@ O resultado demonstrável é:
 capic --emit ast arquivo.capi
 ```
 
+### Stage 3
+
+O Stage 3 implementou HIR e resolução inicial de nomes.
+
+Resultados registrados:
+
+* documentos de HIR, símbolos, escopos e resolução preenchidos em
+  `compiler/semantic/`;
+* documento de lowering atualizado em `compiler/frontend/AST-LOWERING.md`;
+* documento de testes semânticos preenchido em `testing/SEMANTIC-TESTS.md`;
+* crate `capi-hir` criado como modelo HIR puro;
+* crate `capi-lowering` criado como fronteira AST -> HIR;
+* crate `capi-sema` criado para escopos, símbolos e resolução de nomes;
+* IDs HIR, `ScopeId` e `SymbolId` internos e determinísticos implementados;
+* tabelas de símbolos e escopos implementadas para o subconjunto inicial;
+* resolução de nomes implementada para valores, tipos, módulos/imports e
+  patterns do subconjunto inicial;
+* diagnósticos semânticos estruturados para duplicidade, inexistência e
+  ambiguidade implementados;
+* dump determinístico de HIR resolvida implementado;
+* `capic --emit hir arquivo.capi` implementado;
+* critérios de conclusão do Stage 3 validados por testes.
+
+O resultado demonstrável é:
+
+```bash
+capic --emit hir arquivo.capi
+```
+
 ### Próximo stage
 
 O próximo stage planejado é:
 
 ```text
-Stage 3 — HIR e resolução de nomes
+Stage 4 — Sistema de tipos
 ```
 
-O início do Stage 3 deve passar pelos documentos de HIR, símbolos, escopos,
-resolução de nomes e testes semânticos.
+O início do Stage 4 deve passar pelos documentos de modelo de tipos, inferência,
+pipeline de checagem, interning e coerções.
 
 ---
 
 ## Ordem de leitura recomendada
 
-Para entender a engenharia do projeto a partir do Stage 2, leia nesta ordem:
+Para entender a engenharia do projeto a partir do Stage 3, leia nesta ordem:
 
 1. `ENGINEERING-PRINCIPLES.md`
 2. `PROJECT-STRUCTURE.md`
@@ -204,7 +234,7 @@ planning/FEATURE-STATUS.md
 
 ---
 
-## Documentos ativos dos Stages 1 e 2
+## Documentos ativos dos Stages 1, 2 e 3
 
 O Stage 1 usa os seguintes documentos de engenharia:
 
@@ -231,8 +261,19 @@ compiler/frontend/AST-LOWERING.md
 testing/PARSER-TESTS.md
 ```
 
+O Stage 3 usa os seguintes documentos de engenharia:
+
+```text
+compiler/frontend/AST-LOWERING.md
+compiler/semantic/HIR-MODEL.md
+compiler/semantic/SYMBOL-MODEL.md
+compiler/semantic/SCOPE-MODEL.md
+compiler/semantic/NAME-RESOLUTION.md
+testing/SEMANTIC-TESTS.md
+```
+
 Esses documentos estão em status `Aprovado` e descrevem a implementação e os
-testes entregues para o frontend inicial.
+testes entregues para o frontend inicial e a primeira análise semântica.
 
 ---
 
@@ -265,10 +306,17 @@ cargo test --workspace
 cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
 ```
 
 Esses comandos validam a implementação atual do workspace, incluindo os critérios
-obrigatórios dos Stages 1 e 2.
+obrigatórios dos Stages 1, 2 e 3.
+
+A validação consolidada do workspace é:
+
+```bash
+./scripts/check.sh
+```
 
 ---
 
@@ -293,17 +341,21 @@ A documentação de engenharia deve permanecer sincronizada com:
 ../../capi-lang/crates/capi-lexer/
 ../../capi-lang/crates/capi-ast/
 ../../capi-lang/crates/capi-parser/
+../../capi-lang/crates/capi-hir/
+../../capi-lang/crates/capi-lowering/
+../../capi-lang/crates/capi-sema/
 ../../capi-lang/crates/capi-driver/
 ../../capi-lang/crates/capi-cli/
 ../../capi-lang/tests/lexer/
+../../capi-lang/tests/semantic/
 ../../capi-lang/crates/capi-parser/tests/
 ../../.github/workflows/capi-lang-ci.yml
 ```
 
 Mudanças estruturais no workspace, dependências, toolchain, CI, crates
-fundamentais, frontend, AST, parser ou layout de testes devem ser refletidas nos
-documentos de engenharia e, quando forem decisões arquiteturais, nas ADRs
-correspondentes.
+fundamentais, frontend, AST, parser, HIR, semântica inicial ou layout de testes
+devem ser refletidas nos documentos de engenharia e, quando forem decisões
+arquiteturais, nas ADRs correspondentes.
 
 ---
 

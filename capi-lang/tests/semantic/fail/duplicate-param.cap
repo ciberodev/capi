@@ -1,0 +1,5 @@
+class Cliente {}
+
+function main(value : Cliente, value : Cliente) {
+    value;
+}

@@ -48,7 +48,8 @@ Estado atual:
 Stage 0 — Fundação do projeto: Concluído
 Stage 1 — Fontes, diagnósticos e lexer: Concluído
 Stage 2 — Parser e AST: Concluído
-Próximo stage: Stage 3 — HIR e resolução de nomes
+Stage 3 — HIR e resolução de nomes: Concluído
+Próximo stage: Stage 4 — Sistema de tipos
 ```
 
 O registro declara, por stage:
@@ -63,6 +64,15 @@ O registro declara, por stage:
 * riscos a acompanhar nos próximos stages.
 
 Esse documento é a referência formal para responder o que foi concluído.
+
+Resultados demonstráveis já registrados:
+
+```text
+Stage 0 — capic --help, capic --version
+Stage 1 — capic --emit tokens arquivo.capi
+Stage 2 — capic --emit ast arquivo.capi
+Stage 3 — capic --emit hir arquivo.capi
+```
 
 ---
 

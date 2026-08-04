@@ -10,8 +10,11 @@ repository.workspace = true
 capi-ast.workspace = true
 capi-common.workspace = true
 capi-diagnostics.workspace = true
+capi-hir.workspace = true
 capi-lexer.workspace = true
+capi-lowering.workspace = true
 capi-parser.workspace = true
+capi-sema.workspace = true
 capi-session.workspace = true
 capi-source.workspace = true
 

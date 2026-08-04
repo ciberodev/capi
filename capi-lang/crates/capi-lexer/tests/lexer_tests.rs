@@ -32,6 +32,22 @@ fn non_eof_kinds(tokens: &[Token]) -> Vec<TokenKind> {
         .collect()
 }
 
+fn lex_text(path: &str, text: &str) -> (SourceMap, Vec<Token>, Vec<capi_diagnostics::Diagnostic>) {
+    let mut sources = SourceMap::default();
+    let source = sources.add_file(path, text);
+    let output = lex(source, sources.get(source).unwrap().text());
+    let (tokens, diagnostics) = output.into_parts();
+    (sources, tokens, diagnostics)
+}
+
+fn token_texts<'a>(sources: &'a SourceMap, tokens: &'a [Token]) -> Vec<&'a str> {
+    tokens
+        .iter()
+        .filter(|token| token.kind() != &TokenKind::Eof)
+        .map(|token| sources.span_text(token.span()).expect("token span text"))
+        .collect()
+}
+
 fn dump_tokens(tokens: &[Token], sources: &SourceMap) -> String {
     let mut output = String::new();
 
@@ -244,6 +260,44 @@ fn lexes_identifier_forms() {
 }
 
 #[test]
+fn lexes_keywords_case_sensitively_and_keeps_prefixes_as_identifiers() {
+    let (sources, tokens, diagnostics) = lex_text(
+        "keyword-prefixes.cap",
+        "let letter Class class className true false trueValue false_value",
+    );
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Keyword(Keyword::Let),
+            TokenKind::Identifier,
+            TokenKind::Identifier,
+            TokenKind::Keyword(Keyword::Class),
+            TokenKind::Identifier,
+            TokenKind::Literal(LiteralKind::Bool),
+            TokenKind::Literal(LiteralKind::Bool),
+            TokenKind::Identifier,
+            TokenKind::Identifier,
+        ]
+    );
+    assert_eq!(
+        token_texts(&sources, &tokens),
+        vec![
+            "let",
+            "letter",
+            "Class",
+            "class",
+            "className",
+            "true",
+            "false",
+            "trueValue",
+            "false_value",
+        ]
+    );
+}
+
+#[test]
 fn lexes_reserved_keywords() {
     let mut sources = SourceMap::default();
     let source = sources.add_file(
@@ -318,14 +372,38 @@ fn lexes_literal_forms() {
 }
 
 #[test]
-fn lexes_all_delimiters() {
-    let mut sources = SourceMap::default();
-    let source = sources.add_file("delimiters.cap", "( ) { } [ ] , . ; : ? @");
-    let output = lex(source, sources.get(source).unwrap().text());
+fn lexes_number_edge_cases() {
+    let (sources, tokens, diagnostics) = lex_text("numbers.cap", "0 123; 42 \n-1 0.0 3.14 1.");
 
-    assert!(output.diagnostics().is_empty());
+    assert!(diagnostics.is_empty());
     assert_eq!(
-        non_eof_kinds(output.tokens()),
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Delimiter(Delimiter::Semicolon),
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Operator(Operator::Minus),
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Literal(LiteralKind::Float),
+            TokenKind::Literal(LiteralKind::Float),
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Delimiter(Delimiter::Dot),
+        ]
+    );
+    assert_eq!(
+        token_texts(&sources, &tokens),
+        vec!["0", "123", ";", "42", "-", "1", "0.0", "3.14", "1", "."]
+    );
+}
+
+#[test]
+fn lexes_all_delimiters() {
+    let (sources, tokens, diagnostics) = lex_text("delimiters.cap", "( ) { } [ ] , . ; : ? @");
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
         vec![
             TokenKind::Delimiter(Delimiter::LeftParen),
             TokenKind::Delimiter(Delimiter::RightParen),
@@ -341,17 +419,28 @@ fn lexes_all_delimiters() {
             TokenKind::Delimiter(Delimiter::At),
         ]
     );
+    for token in tokens
+        .iter()
+        .filter(|token| token.kind() != &TokenKind::Eof)
+    {
+        assert_eq!(token.span().end().raw() - token.span().start().raw(), 1);
+    }
+    assert_eq!(
+        token_texts(&sources, &tokens),
+        vec!["(", ")", "{", "}", "[", "]", ",", ".", ";", ":", "?", "@"]
+    );
 }
 
 #[test]
 fn discards_line_and_block_comments() {
-    let mut sources = SourceMap::default();
-    let source = sources.add_file("comments.cap", "let // ignored\nx /* ignored */ = 1");
-    let output = lex(source, sources.get(source).unwrap().text());
+    let (sources, tokens, diagnostics) = lex_text(
+        "comments.cap",
+        "let // ignored\nx /* ignored */ = 1\n// eof comment",
+    );
 
-    assert!(output.diagnostics().is_empty());
+    assert!(diagnostics.is_empty());
     assert_eq!(
-        non_eof_kinds(output.tokens()),
+        non_eof_kinds(&tokens),
         vec![
             TokenKind::Keyword(Keyword::Let),
             TokenKind::Identifier,
@@ -359,6 +448,87 @@ fn discards_line_and_block_comments() {
             TokenKind::Literal(LiteralKind::Integer),
         ]
     );
+    assert_eq!(token_texts(&sources, &tokens), vec!["let", "x", "=", "1"]);
+}
+
+#[test]
+fn discards_block_comments_with_unicode_and_nested_openers_as_content() {
+    let (sources, tokens, diagnostics) = lex_text(
+        "unicode-comments.cap",
+        "let /* olá /* nested opener */ value = 1",
+    );
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Keyword(Keyword::Let),
+            TokenKind::Identifier,
+            TokenKind::Operator(Operator::Equal),
+            TokenKind::Literal(LiteralKind::Integer),
+        ]
+    );
+    assert_eq!(
+        token_texts(&sources, &tokens),
+        vec!["let", "value", "=", "1"]
+    );
+}
+
+#[test]
+fn whitespace_and_crlf_do_not_shift_token_locations() {
+    let (sources, tokens, diagnostics) = lex_text("whitespace.cap", " \t\r\n  let\rvalue\n");
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![TokenKind::Keyword(Keyword::Let), TokenKind::Identifier]
+    );
+    assert_eq!(
+        sources.location(tokens[0].span().source(), tokens[0].span().start()),
+        Some(SourceLocation::new(tokens[0].span().source(), 2, 3))
+    );
+    assert_eq!(
+        sources.location(tokens[1].span().source(), tokens[1].span().start()),
+        Some(SourceLocation::new(tokens[1].span().source(), 3, 1))
+    );
+    let eof = tokens.last().expect("EOF token");
+    assert_eq!(eof.span().start(), eof.span().end());
+    assert_eq!(
+        eof.span().start().raw(),
+        " \t\r\n  let\rvalue\n".len() as u32
+    );
+}
+
+#[test]
+fn skips_initial_bom_and_rejects_bom_elsewhere() {
+    let (sources, tokens, diagnostics) = lex_text("bom.cap", "\u{feff}let x\u{feff}");
+
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Keyword(Keyword::Let),
+            TokenKind::Identifier,
+            TokenKind::Error
+        ]
+    );
+    assert_eq!(token_texts(&sources, &tokens), vec!["let", "x", "\u{feff}"]);
+    assert!(diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.message() == "invalid character in source file"));
+}
+
+#[test]
+fn recovers_after_lexical_errors_and_keeps_later_tokens() {
+    let (_, tokens, diagnostics) = lex_text("recovery.cap", "$ let y = 1; \"abc\nlet z = 2;");
+
+    assert!(diagnostics.len() >= 2);
+    assert!(tokens.iter().any(|token| token.kind() == &TokenKind::Error));
+    assert!(tokens.windows(4).any(|window| matches!(
+        window[0].kind(),
+        TokenKind::Keyword(Keyword::Let)
+    ) && matches!(window[1].kind(), TokenKind::Identifier)
+        && matches!(window[2].kind(), TokenKind::Operator(Operator::Equal))
+        && matches!(window[3].kind(), TokenKind::Literal(LiteralKind::Integer))));
 }
 
 #[test]
@@ -568,6 +738,7 @@ fn reports_compile_fail_lexical_fixtures() {
         "tests/lexer/fail/invalid-number.cap",
         "tests/lexer/fail/unterminated-string.cap",
         "tests/lexer/fail/invalid-escape.cap",
+        "tests/lexer/fail/unterminated-block-comment.cap",
     ] {
         let (_, tokens, diagnostics) = lex_fixture(path);
 
@@ -577,9 +748,10 @@ fn reports_compile_fail_lexical_fixtures() {
         );
         assert!(
             tokens.iter().any(|token| token.kind() == &TokenKind::Error)
-                || diagnostics
-                    .iter()
-                    .any(|diagnostic| diagnostic.message() == "invalid escape sequence"),
+                || diagnostics.iter().any(|diagnostic| matches!(
+                    diagnostic.message(),
+                    "invalid escape sequence" | "unterminated block comment"
+                )),
             "{path} should be rejected by lexical validation"
         );
     }

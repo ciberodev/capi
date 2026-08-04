@@ -183,6 +183,7 @@ Saída conceitual:
 ```rust
 pub struct AstLoweringOutput {
     pub hir: Option<Hir>,
+    pub ast_to_hir: AstToHirMap,
     pub diagnostics: Vec<Diagnostic>,
     pub blocked: bool,
 }
@@ -191,6 +192,7 @@ pub struct AstLoweringOutput {
 Formas equivalentes são permitidas, desde que expressem:
 
 - HIR inicial construída;
+- mapeamento AST-HIR quando HIR for construída;
 - diagnósticos de lowering;
 - indicação de bloqueio quando a AST não permite HIR útil.
 
@@ -199,21 +201,20 @@ Regras:
 - AST sintaticamente válida deve produzir HIR inicial;
 - AST com erros recuperados pode produzir HIR parcial somente se isso for explicitamente suportado;
 - se houver `AstErrorNode` em posição semanticamente obrigatória, o lowering pode bloquear;
+- `ast_to_hir` deve ser determinístico e preservar relação entre nós AST e elementos HIR criados;
 - bloqueio de lowering não deve apagar diagnósticos do parser.
 
 ---
 
 ## 8. Organização do Componente
 
-O lowering pode viver em:
+O lowering vive em:
 
 ```text
-capi-hir
-capi-sema
-capi-frontend
+capi-lowering
 ```
 
-ou crate equivalente, conforme a organização aprovada do workspace.
+`capi-hir` deve permanecer como modelo HIR puro. O componente de lowering é a fronteira que conhece simultaneamente AST e HIR.
 
 Responsabilidades do componente:
 
@@ -237,6 +238,7 @@ Dependências permitidas:
 
 O componente não deve depender de:
 
+- `capi-sema`;
 - resolver de nomes como pré-condição;
 - type checker;
 - borrow checker;
@@ -264,7 +266,7 @@ Componentes:
 | --- | --- |
 | `AstLowerer` | Coordena traversal e transformação. |
 | `HirBuilder` | Cria elementos HIR e IDs determinísticos. |
-| `AstToHirMap` | Preserva relação entre nós AST e elementos HIR. |
+| `AstToHirMap` | Preserva relação entre nós AST e elementos HIR dentro de `capi-lowering`. |
 | `DiagnosticSink` | Registra problemas estruturais encontrados no lowering. |
 | `LoweringContext` | Mantém contexto atual de módulo, declaração, função ou bloco. |
 
@@ -284,6 +286,7 @@ Contrato conceitual:
 
 ```rust
 pub struct HirOrigin {
+    pub source: SourceId,
     pub ast_node: Option<AstNodeId>,
     pub span: Span,
 }
@@ -293,10 +296,13 @@ Regras:
 
 - `HirId` e `AstNodeId` são identidades distintas;
 - HIR não deve reutilizar IDs da AST como identidade própria;
+- `source` deve ser preservado a partir da unidade de compilação ou origem do nó AST;
 - um nó AST pode gerar zero, um ou múltiplos elementos HIR;
 - um elemento HIR pode apontar para o nó AST principal que o originou;
 - quando uma normalização combinar múltiplos nós AST, a HIR deve preservar span representativo e, se necessário, origens auxiliares;
 - spans devem permanecer válidos para diagnósticos posteriores.
+
+O formato autoritativo de `HirOrigin` pertence a `HIR-MODEL.md`. Este documento apenas define quais dados o lowering deve preencher.
 
 ---
 
@@ -755,6 +761,9 @@ O lowering inicial não deve:
 
 - resolver nomes;
 - criar símbolos definitivos;
+- construir `SymbolTable`;
+- construir `ScopeGraph` final;
+- preencher `NameBindingTable`;
 - inferir tipos;
 - aplicar conversões implícitas;
 - selecionar overload;
@@ -862,12 +871,51 @@ Ela não deve fornecer:
 - símbolos resolvidos;
 - escopos finais;
 - binding de identificadores;
+- `ResolvedBinding`;
+- `NameBindingTable`;
 - tipos finais;
 - relações de herança validadas.
 
 ---
 
-## 27. Interface com Dumps
+## 27. Interface com Escopos e Símbolos
+
+A HIR produzida pelo lowering deve fornecer informação suficiente para `SCOPE-MODEL.md` e `SYMBOL-MODEL.md` operarem sem consultar a AST como autoridade estrutural.
+
+Para escopos, a HIR inicial deve fornecer:
+
+- unidades e módulos;
+- itens que introduzem escopo;
+- blocos;
+- funções, métodos e construtores;
+- padrões e braços de `match` quando aplicável;
+- origem e spans para regiões de escopo;
+- ordem textual determinística.
+
+Para símbolos, a HIR inicial deve fornecer:
+
+- nomes declarados preservados como `HirName` ou forma equivalente;
+- categorias declarativas distinguíveis;
+- membros associados a seus tipos proprietários;
+- parâmetros associados a suas assinaturas;
+- declarações locais associadas a blocos;
+- imports e aliases pendentes;
+- parâmetros genéricos pendentes quando suportados.
+
+O lowering não deve:
+
+- atribuir `ScopeId`;
+- atribuir `SymbolId`;
+- diagnosticar duplicidade de símbolos;
+- decidir shadowing;
+- resolver imports;
+- resolver namespaces.
+
+Essas responsabilidades pertencem a `SCOPE-MODEL.md`, `SYMBOL-MODEL.md` e `NAME-RESOLUTION.md`.
+
+---
+
+## 28. Interface com Dumps
 
 Quando o Stage 3 implementar:
 
@@ -891,7 +939,7 @@ Requisitos de dump:
 
 ---
 
-## 28. Testes Obrigatórios
+## 29. Testes Obrigatórios
 
 Testes de lowering devem cobrir:
 
@@ -928,23 +976,27 @@ Testes de lowering devem cobrir:
 - agrupamento redundante;
 - spans preservados;
 - origem AST preservada;
+- `SourceId` preservado em `HirOrigin`;
+- mapeamento AST-HIR determinístico;
 - AST com erro bloqueando lowering;
 - HIR parcial marcada como inválida, se suportada;
 - dump determinístico.
 
-Testes de lowering não devem exigir resolução de nomes nem inferência de tipos.
+Testes de lowering não devem exigir resolução de nomes, construção final de escopos, tabela de símbolos nem inferência de tipos.
 
 ---
 
-## 29. Critérios de Aceite
+## 30. Critérios de Aceite
 
 Para este documento ser considerado implementado no Stage 3:
 
 - existe API de lowering de AST para HIR;
 - AST válida produz HIR inicial;
-- HIR preserva spans e origem AST;
+- HIR preserva `SourceId`, spans e origem AST;
+- mapeamento AST-HIR é produzido quando aplicável;
 - HIR não depende diretamente da estrutura física da AST;
 - nomes e tipos permanecem não resolvidos;
+- escopos, símbolos e bindings permanecem ausentes antes das fases apropriadas;
 - normalizações permitidas estão documentadas e testadas;
 - AST com erro é bloqueada ou marcada explicitamente;
 - diagnósticos de lowering são estruturados;
@@ -955,7 +1007,7 @@ Para o Stage 2, este documento é considerado aprovado quando seus contratos for
 
 ---
 
-## 30. Relações Normativas
+## 31. Relações Normativas
 
 Este documento depende diretamente de:
 

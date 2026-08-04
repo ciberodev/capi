@@ -36,9 +36,20 @@ dependencies = [
  "capi-ast",
  "capi-common",
  "capi-diagnostics",
+ "capi-hir",
  "capi-lexer",
+ "capi-lowering",
  "capi-parser",
+ "capi-sema",
  "capi-session",
+ "capi-source",
+]
+
+[[package]]
+name = "capi-hir"
+version = "0.0.0"
+dependencies = [
+ "capi-lexer",
  "capi-source",
 ]
 
@@ -51,12 +62,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "capi-lowering"
+version = "0.0.0"
+dependencies = [
+ "capi-ast",
+ "capi-diagnostics",
+ "capi-hir",
+ "capi-lexer",
+ "capi-parser",
+ "capi-source",
+]
+
+[[package]]
 name = "capi-parser"
 version = "0.0.0"
 dependencies = [
  "capi-ast",
  "capi-diagnostics",
  "capi-lexer",
+ "capi-source",
+]
+
+[[package]]
+name = "capi-sema"
+version = "0.0.0"
+dependencies = [
+ "capi-diagnostics",
+ "capi-hir",
+ "capi-lexer",
+ "capi-lowering",
+ "capi-parser",
  "capi-source",
 ]
 

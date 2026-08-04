@@ -1,0 +1,9 @@
+module app.main;
+import app.util;
+
+class Cliente {}
+
+function main() {
+    let value = 1;
+    value;
+}

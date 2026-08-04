@@ -1,0 +1,7 @@
+Unit unit0 source=0 module=app.main span=0..103
+  Import import0 path=app.util span=17..33
+  Class item0 name=Cliente symbol=<pending>
+  Function id=1 name=main params=0 symbol=<pending>
+    Block block0 span=69..102
+      Local local0 name=value symbol=<pending>
+      Path expr1 value binding=<pending>

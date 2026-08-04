@@ -22,9 +22,9 @@ normativa do Documento 28 e não redefine critérios de conclusão.
 ## 2. Estado Atual
 
 ```text
-Horizonte atual: Frontend inicial concluído
-Último stage concluído: Stage 2 — Parser e AST
-Próximo foco: Stage 3 — HIR e resolução de nomes
+Horizonte atual: Semântica inicial em andamento
+Último stage concluído: Stage 3 — HIR e resolução de nomes
+Próximo foco: Stage 4 — Sistema de tipos
 ```
 
 ---
@@ -35,7 +35,7 @@ Próximo foco: Stage 3 — HIR e resolução de nomes
 | --- | --- | --- | --- |
 | H0 — Fundação | Stage 0 | Concluído | Workspace, CI, CLI mínima e critérios de aceite. |
 | H1 — Frontend inicial | Stages 1-2 | Concluído | Fontes, diagnósticos, lexer, parser e AST. |
-| H2 — Semântica inicial | Stages 3-5 | Planejado | HIR, nomes, tipos e modelo de objetos. |
+| H2 — Semântica inicial | Stages 3-5 | Em andamento | HIR, nomes, tipos e modelo de objetos. |
 | H3 — Segurança de memória | Stages 6-7 | Planejado | Ownership, borrowing, regiões e Domains. |
 | H4 — IR e execução mínima | Stages 8-11 | Planejado | MIR, runtime, ABI, biblioteca mínima e Cranelift. |
 | H5 — Toolchain e ecossistema | Stages 12-14 | Planejado | Projetos, pacotes, documentação e ferramentas. |
@@ -93,19 +93,19 @@ capic --emit ast arquivo.capi
 
 ## 6. Horizonte H2 — Semântica Inicial
 
-Status: Planejado.
+Status: Em andamento.
 
 Stages:
 
-- Stage 3 — HIR e resolução de nomes;
+- Stage 3 — HIR e resolução de nomes concluído;
 - Stage 4 — Sistema de tipos;
 - Stage 5 — Modelo de objetos.
 
-Resultados esperados:
+Resultados:
 
-- HIR determinística;
-- símbolos e escopos;
-- resolução de nomes;
+- HIR determinística concluída;
+- símbolos e escopos concluídos para o subconjunto inicial;
+- resolução de nomes concluída para o subconjunto inicial;
 - inferência e checagem de tipos;
 - generics iniciais;
 - classes e hierarquias validadas.
@@ -227,16 +227,25 @@ Resultados esperados:
 O próximo foco operacional é:
 
 ```text
-Stage 3 — HIR e resolução de nomes
+Stage 4 — Sistema de tipos
 ```
 
-O trabalho deve começar pela documentação obrigatória:
+O Stage 3 entregou:
 
+- `compiler/frontend/AST-LOWERING.md`;
 - `compiler/semantic/HIR-MODEL.md`;
 - `compiler/semantic/SYMBOL-MODEL.md`;
 - `compiler/semantic/SCOPE-MODEL.md`;
 - `compiler/semantic/NAME-RESOLUTION.md`;
 - `testing/SEMANTIC-TESTS.md`.
+
+O próximo trabalho deve começar pelos contratos de tipos:
+
+- `compiler/semantic/TYPE-MODEL.md`;
+- `compiler/semantic/TYPE-INFERENCE.md`;
+- `compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
+- `compiler/semantic/TYPE-INTERNING.md`;
+- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`.
 
 ---
 

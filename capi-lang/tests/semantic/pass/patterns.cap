@@ -1,0 +1,10 @@
+class Cliente {}
+
+function main(value : Cliente) {
+    match (value) {
+        case Cliente(bound):
+            bound;
+        case _:
+            value;
+    }
+}

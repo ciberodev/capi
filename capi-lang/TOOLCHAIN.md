@@ -4,7 +4,7 @@ This file records the minimum tool versions for the official Capi implementation
 
 The current policy remains intentionally narrow: the Rust workspace must build,
 test, lint, format, and generate Rust API documentation with the pinned Rust
-toolchain. Stages 1 and 2 did not change the MSRV or pinned tool versions.
+toolchain. Stages 1, 2 and 3 did not change the MSRV or pinned tool versions.
 
 ## Minimum Versions
 

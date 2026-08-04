@@ -12,7 +12,7 @@ The language does not adapt Rust's ownership model to traditional object-oriente
 
 ## Repository Status
 
-Capi is currently past **Stage 2 - Parser and AST** for the official implementation.
+Capi is currently past **Stage 3 - HIR and name resolution** for the official implementation.
 
 The repository contains the language specification, implementation specification, architecture decisions, engineering documentation, planning records, and the Rust workspace for the official implementation.
 
@@ -25,13 +25,15 @@ There is a `capic` executable in `capi-lang/`. It currently supports:
 - session initialization;
 - basic internal-error handling;
 - Stage 1 token dumps;
-- Stage 2 AST dumps.
+- Stage 2 AST dumps;
+- Stage 3 resolved HIR dumps.
 
 Current demonstrable commands:
 
 ```bash
 capic --emit tokens arquivo.capi
 capic --emit ast arquivo.capi
+capic --emit hir arquivo.capi
 ```
 
 It does not compile Capi programs yet.
@@ -39,7 +41,7 @@ It does not compile Capi programs yet.
 The next planned stage is:
 
 ```text
-Stage 3 - HIR and name resolution
+Stage 4 - Type system
 ```
 
 ## Current Phase
@@ -81,6 +83,22 @@ Stage 2 delivered:
 - deterministic AST dumps;
 - golden snapshot tests for AST dumps;
 - AST dump support through `capic --emit ast`.
+
+**Stage 3 - HIR and Name Resolution** is complete.
+
+Stage 3 delivered:
+
+- the `capi-hir` crate as a pure HIR model, without a direct AST dependency;
+- the `capi-lowering` crate as the AST-to-HIR boundary;
+- the `capi-sema` crate for scopes, symbols, and name resolution;
+- deterministic typed HIR IDs;
+- deterministic `ScopeId` and `SymbolId` identities;
+- AST-to-HIR lowering with source and span preservation;
+- symbol tables and scope graphs for the initial subset;
+- name resolution for values, types, modules/imports, and patterns in the initial subset;
+- structured semantic diagnostics for duplicate, missing, and ambiguous references;
+- deterministic initial and resolved HIR dumps;
+- resolved HIR dump support through `capic --emit hir`.
 
 The formal progress record is:
 
@@ -124,8 +142,8 @@ Important entry points:
 - [`Language specification`](capi-docs/docs/specification/language/) - documents `00` to `12`.
 - [`Implementation specification`](capi-docs/docs/specification/implementation/) - documents `13` to `28`.
 - [`Engineering documentation`](capi-docs/docs/engineering/) - architecture, build, testing, development, planning, and compiler docs.
-- [`Compiler engineering`](capi-docs/docs/engineering/compiler/README.md) - compiler source, diagnostics, lexer, parser, AST, and future phases.
-- [`Testing engineering`](capi-docs/docs/engineering/testing/README.md) - testing strategy, lexer tests, and parser tests.
+- [`Compiler engineering`](capi-docs/docs/engineering/compiler/README.md) - compiler source, diagnostics, lexer, parser, AST, HIR, and initial semantics.
+- [`Testing engineering`](capi-docs/docs/engineering/testing/README.md) - testing strategy, lexer tests, parser tests, and semantic tests.
 - [`Planning`](capi-docs/docs/engineering/planning/README.md) - definition of done, feature status, implementation order, milestones, roadmap, risks, and technical debt.
 - [`ADRs`](capi-docs/docs/adr/) - architecture decision records.
 
@@ -147,7 +165,10 @@ The current workspace crates are:
 - `capi-diagnostics` - structured diagnostic infrastructure;
 - `capi-lexer` - token model and initial lexer;
 - `capi-ast` - abstract syntax tree model and deterministic AST dump;
-- `capi-parser` - parser, syntax diagnostics, recovery, and AST construction.
+- `capi-parser` - parser, syntax diagnostics, recovery, and AST construction;
+- `capi-hir` - high-level intermediate representation model and deterministic HIR dump;
+- `capi-lowering` - AST-to-HIR lowering;
+- `capi-sema` - scope graph, symbol table, and initial name resolution.
 
 The workspace currently has no external Rust crate dependencies. The dependency policy is recorded in [`capi-lang/DEPENDENCIES.md`](capi-lang/DEPENDENCIES.md).
 
@@ -186,16 +207,17 @@ At this point, the repository has:
 - a complete language specification set from documents `00` to `12`;
 - an implementation specification set from documents `13` to `28`;
 - approved Stage 0 ADRs for core implementation decisions;
-- approved engineering documents for Stages 0, 1, and 2;
+- approved engineering documents for Stages 0, 1, 2, and 3;
 - documentation indexes for `capi-docs`, `docs`, ADRs, engineering, compiler, architecture, build/CI, development, testing, and planning;
 - planning records for feature status, implementation order, milestones, roadmap, risks, and technical debt;
 - a `capi-docs` changelog;
 - a Rust Cargo workspace in `capi-lang`;
-- the fundamental compiler crates plus source, diagnostics, lexer, AST, and parser crates;
-- a `capic` executable with token dump and AST dump support;
+- the fundamental compiler crates plus source, diagnostics, lexer, AST, parser, HIR, lowering, and semantic crates;
+- a `capic` executable with token, AST, and resolved HIR dump support;
 - local validation scripts and CI workflow configuration;
 - lexer fixtures and snapshot tests;
-- parser integration tests and AST dump golden snapshots.
+- parser integration tests and AST dump golden snapshots;
+- lowering tests, semantic integration tests, semantic fixtures, and HIR snapshots.
 
 The current local validation set includes:
 
@@ -209,17 +231,17 @@ cargo run -p capi-cli --locked -- --help
 cargo run -p capi-cli --locked -- --version
 cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic --locked -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
+cargo run -p capi-cli --locked -- --emit hir tests/semantic/pass/basic.cap
 scripts/check.sh
 ```
 
-The CI workflow is versioned at [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). It validates formatting, toolchain versions, dependency policy, Clippy, tests, build, documentation, and `capic` smoke tests for token and AST dumps.
+The CI workflow is versioned at [`.github/workflows/capi-lang-ci.yml`](.github/workflows/capi-lang-ci.yml). It validates formatting, toolchain versions, dependency policy, Clippy, tests, build, documentation, and `capic` smoke tests for token, AST, and HIR dumps.
 
 ## What Is Not Ready Yet
 
 The repository does not yet provide:
 
 - a compiler capable of compiling Capi programs;
-- HIR or name resolution;
 - type checking;
 - ownership and domain analysis;
 - MIR;
@@ -232,20 +254,18 @@ The repository does not yet provide:
 
 ## Near-Term Roadmap
 
-The immediate next step is **Stage 3 - HIR and name resolution**.
+The immediate next step is **Stage 4 - Type system**.
 
-Stage 3 should start with the required semantic documents and then implement:
+Stage 4 should start with the required type-system documents and then implement:
 
-- AST to HIR lowering;
-- internal IDs;
-- symbol tables;
-- scopes;
-- modules and imports;
-- name resolution;
-- duplicate, missing, and ambiguous symbol diagnostics;
-- deterministic HIR dump.
+- the internal type model;
+- type interning and canonicalization;
+- initial type inference;
+- type checking for the initial subset;
+- initial subtype and coercion rules;
+- structured type diagnostics.
 
-Expected demonstrable command:
+The most recent demonstrable command is:
 
 ```bash
 capic --emit hir arquivo.capi

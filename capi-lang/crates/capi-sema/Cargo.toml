@@ -1,0 +1,20 @@
+[package]
+name = "capi-sema"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+capi-diagnostics.workspace = true
+capi-hir.workspace = true
+capi-source.workspace = true
+
+[dev-dependencies]
+capi-lexer.workspace = true
+capi-lowering.workspace = true
+capi-parser.workspace = true
+
+[lints]
+workspace = true

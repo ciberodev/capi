@@ -24,7 +24,7 @@ implementação oficial. A implementação Rust vive fora deste pacote, em
 
 ## Estado atual
 
-Os Stages 0, 1 e 2 da implementação oficial estão concluídos e registrados em:
+Os Stages 0, 1, 2 e 3 da implementação oficial estão concluídos e registrados em:
 
 ```text
 docs/engineering/planning/FEATURE-STATUS.md
@@ -64,10 +64,25 @@ O Stage 2 implementou o frontend sintático inicial e consolidou:
 * dump de AST via `capic --emit ast arquivo.capi`;
 * critérios de conclusão do frontend sintático validados por testes.
 
+O Stage 3 implementou HIR e resolução inicial de nomes e consolidou:
+
+* documentação de lowering, HIR, símbolos, escopos e resolução de nomes;
+* documentação dos testes semânticos obrigatórios;
+* crates `capi-hir`, `capi-lowering` e `capi-sema`;
+* HIR como modelo puro, sem dependência direta da AST;
+* lowering AST -> HIR;
+* IDs HIR, `ScopeId` e `SymbolId` internos e determinísticos;
+* tabelas de símbolos e escopos;
+* resolução de nomes para o subconjunto inicial;
+* diagnósticos semânticos estruturados;
+* snapshots de HIR inicial e HIR resolvida;
+* dump de HIR resolvida via `capic --emit hir arquivo.capi`;
+* critérios de conclusão do Stage 3 validados por testes.
+
 O próximo stage planejado é:
 
 ```text
-Stage 3 — HIR e resolução de nomes
+Stage 4 — Sistema de tipos
 ```
 
 O histórico documental está registrado em:
@@ -100,7 +115,8 @@ Para começar pela engenharia da implementação:
 5. `docs/engineering/compiler/README.md`
 6. `docs/engineering/testing/README.md`
 
-Para entender o frontend inicial entregue nos Stages 1 e 2:
+Para entender o frontend inicial e a primeira análise semântica entregues nos
+Stages 1, 2 e 3:
 
 1. `docs/engineering/compiler/source/SOURCE-MODEL.md`
 2. `docs/engineering/compiler/source/SOURCE-MAP.md`
@@ -117,17 +133,22 @@ Para entender o frontend inicial entregue nos Stages 1 e 2:
 13. `docs/engineering/compiler/frontend/PARSER-RECOVERY.md`
 14. `docs/engineering/compiler/frontend/AST-LOWERING.md`
 15. `docs/engineering/testing/PARSER-TESTS.md`
+16. `docs/engineering/compiler/semantic/HIR-MODEL.md`
+17. `docs/engineering/compiler/semantic/SYMBOL-MODEL.md`
+18. `docs/engineering/compiler/semantic/SCOPE-MODEL.md`
+19. `docs/engineering/compiler/semantic/NAME-RESOLUTION.md`
+20. `docs/engineering/testing/SEMANTIC-TESTS.md`
 
 Para iniciar o próximo stage planejado:
 
 1. `docs/engineering/planning/IMPLEMENTATION-ORDER.md`
 2. `docs/engineering/planning/MILESTONES.md`
 3. `docs/engineering/planning/ROADMAP.md`
-4. `docs/engineering/compiler/semantic/HIR-MODEL.md`
-5. `docs/engineering/compiler/semantic/SYMBOL-MODEL.md`
-6. `docs/engineering/compiler/semantic/SCOPE-MODEL.md`
-7. `docs/engineering/compiler/semantic/NAME-RESOLUTION.md`
-8. `docs/engineering/testing/SEMANTIC-TESTS.md`
+4. `docs/engineering/compiler/semantic/TYPE-MODEL.md`
+5. `docs/engineering/compiler/semantic/TYPE-INFERENCE.md`
+6. `docs/engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+7. `docs/engineering/compiler/semantic/TYPE-INTERNING.md`
+8. `docs/engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
 
 ---
 
@@ -163,7 +184,8 @@ capi/
 `capi-docs` documenta o projeto.
 
 `capi-lang` contém a implementação oficial em Rust, incluindo os crates iniciais
-do compilador, `capi-ast`, `capi-parser` e o executável `capic`.
+do compilador, `capi-ast`, `capi-parser`, `capi-hir`, `capi-lowering`,
+`capi-sema` e o executável `capic`.
 
 Mudanças em especificação, ADRs, engenharia ou progresso de stages devem ser
 refletidas nos índices correspondentes e registradas no `CHANGELOG.md` quando

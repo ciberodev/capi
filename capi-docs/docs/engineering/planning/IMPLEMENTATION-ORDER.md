@@ -31,8 +31,8 @@ Este documento não substitui o Documento 28. Quando houver conflito, prevalecem
 ## 2. Estado Atual
 
 ```text
-Último stage concluído: Stage 2 — Parser e AST
-Próximo stage planejado: Stage 3 — HIR e resolução de nomes
+Último stage concluído: Stage 3 — HIR e resolução de nomes
+Próximo stage planejado: Stage 4 — Sistema de tipos
 Registro de progresso: FEATURE-STATUS.md
 ```
 
@@ -40,11 +40,12 @@ Stages concluídos:
 
 - Stage 0 — Fundação do projeto;
 - Stage 1 — Fontes, diagnósticos e lexer;
-- Stage 2 — Parser e AST.
+- Stage 2 — Parser e AST;
+- Stage 3 — HIR e resolução de nomes.
 
 Stages planejados:
 
-- Stage 3 a Stage 19.
+- Stage 4 a Stage 19.
 
 ---
 
@@ -81,7 +82,7 @@ Um stage só deve ser marcado como concluído quando os critérios aplicáveis e
 | 0 | Fundação do projeto | Concluído | Criar workspace, crates iniciais, CI, padrões e CLI mínima. | `capic --help`, `capic --version`, `cargo test` |
 | 1 | Fontes, diagnósticos e lexer | Concluído | Ler fontes, mapear spans, emitir diagnósticos e tokens. | `capic --emit tokens arquivo.capi` |
 | 2 | Parser e AST | Concluído | Transformar tokens em AST com spans, diagnósticos e recuperação. | `capic --emit ast arquivo.capi` |
-| 3 | HIR e resolução de nomes | Planejado | Baixar AST para HIR e resolver símbolos, módulos, imports e escopos. | `capic --emit hir arquivo.capi` |
+| 3 | HIR e resolução de nomes | Concluído | Baixar AST para HIR e resolver símbolos, módulos, imports e escopos. | `capic --emit hir arquivo.capi` |
 | 4 | Sistema de tipos | Planejado | Implementar tipos internos, inferência, verificação, coerções e generics. | `capic check arquivo.capi` |
 | 5 | Modelo de objetos | Planejado | Implementar classes, identidade, herança, override, layout e despacho. | Checagem válida de hierarquias e objetos |
 | 6 | Ownership, borrowing e regiões | Planejado | Implementar regras fundamentais de segurança de memória. | Rejeição de moves, borrows e escapes inválidos |
@@ -189,7 +190,7 @@ capic --emit ast arquivo.capi
 
 ### Stage 3 — HIR e resolução de nomes
 
-Status: Planejado.
+Status: Concluído.
 
 Objetivo:
 
@@ -200,6 +201,8 @@ Objetivo:
 
 Entregas principais:
 
+- `capi-hir` como modelo HIR puro;
+- `capi-lowering` como fronteira AST -> HIR;
 - lowering efetivo de AST para HIR;
 - tabelas de símbolos;
 - escopos;
@@ -207,7 +210,7 @@ Entregas principais:
 - diagnósticos de símbolos duplicados, inexistentes e ambíguos;
 - dump de HIR.
 
-Resultado esperado:
+Resultado demonstrável:
 
 ```bash
 capic --emit hir arquivo.capi
@@ -534,21 +537,20 @@ Entregas principais:
 
 ## 6. Próxima Ação Operacional
 
-Com o Stage 2 concluído, a próxima ação operacional é iniciar o Stage 3:
+Com o Stage 3 concluído, a próxima ação operacional é iniciar o Stage 4:
 
 ```text
-Stage 3 — HIR e resolução de nomes
+Stage 4 — Sistema de tipos
 ```
 
 Antes da implementação, devem ser preenchidos ou revisados os documentos
-obrigatórios do Stage 3:
+obrigatórios do Stage 4:
 
-- `compiler/semantic/HIR-MODEL.md`;
-- `compiler/semantic/SYMBOL-MODEL.md`;
-- `compiler/semantic/SCOPE-MODEL.md`;
-- `compiler/semantic/NAME-RESOLUTION.md`;
-- `compiler/frontend/AST-LOWERING.md`;
-- `testing/SEMANTIC-TESTS.md`.
+- `compiler/semantic/TYPE-MODEL.md`;
+- `compiler/semantic/TYPE-INFERENCE.md`;
+- `compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
+- `compiler/semantic/TYPE-INTERNING.md`;
+- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`.
 
 ---
 

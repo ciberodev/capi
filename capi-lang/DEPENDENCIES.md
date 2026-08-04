@@ -9,7 +9,7 @@ The authoritative engineering rules live in:
 
 ## Current Policy
 
-Stage 2 continues with no external Rust crate dependencies.
+Stage 3 continues with no external Rust crate dependencies.
 
 Allowed dependencies are only workspace path dependencies between Capi crates:
 
@@ -20,14 +20,31 @@ capi-cli -> capi-driver
 capi-driver -> capi-ast
 capi-driver -> capi-common
 capi-driver -> capi-diagnostics
+capi-driver -> capi-hir
 capi-driver -> capi-lexer
+capi-driver -> capi-lowering
 capi-driver -> capi-parser
+capi-driver -> capi-sema
 capi-driver -> capi-session
 capi-driver -> capi-source
+capi-hir -> capi-lexer
+capi-hir -> capi-source
+capi-lowering -> capi-ast
+capi-lowering -> capi-diagnostics
+capi-lowering -> capi-hir
+capi-lowering -> capi-source
+capi-lowering [dev] -> capi-lexer
+capi-lowering [dev] -> capi-parser
 capi-parser -> capi-ast
 capi-parser -> capi-diagnostics
 capi-parser -> capi-lexer
 capi-parser -> capi-source
+capi-sema -> capi-diagnostics
+capi-sema -> capi-hir
+capi-sema -> capi-source
+capi-sema [dev] -> capi-lexer
+capi-sema [dev] -> capi-lowering
+capi-sema [dev] -> capi-parser
 capi-session -> capi-diagnostics
 capi-session -> capi-source
 capi-source -> capi-common

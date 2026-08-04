@@ -23,9 +23,9 @@ reproduzível.
 ## 2. Estado Atual
 
 ```text
-Último milestone concluído: M2 — AST sintática inicial
-Stage correspondente: Stage 2 — Parser e AST
-Próximo milestone planejado: M3 — HIR e resolução de nomes
+Último milestone concluído: M3 — HIR e nomes resolvidos
+Stage correspondente: Stage 3 — HIR e resolução de nomes
+Próximo milestone planejado: M4 — Checagem semântica inicial
 ```
 
 ---
@@ -37,7 +37,7 @@ Próximo milestone planejado: M3 — HIR e resolução de nomes
 | M0 — Fundação executável | Stage 0 | Concluído | `capic --help`, `capic --version`, `cargo test` |
 | M1 — Tokens e diagnósticos léxicos | Stage 1 | Concluído | `capic --emit tokens arquivo.capi` |
 | M2 — AST sintática inicial | Stage 2 | Concluído | `capic --emit ast arquivo.capi` |
-| M3 — HIR e nomes resolvidos | Stage 3 | Planejado | `capic --emit hir arquivo.capi` |
+| M3 — HIR e nomes resolvidos | Stage 3 | Concluído | `capic --emit hir arquivo.capi` |
 | M4 — Checagem semântica inicial | Stage 4 | Planejado | `capic check arquivo.capi` |
 | M5 — Objetos semanticamente validados | Stage 5 | Planejado | Hierarquias, overrides e identidade validados |
 | M6 — Segurança de memória inicial | Stage 6 | Planejado | Moves, borrows, regiões e escapes validados |
@@ -100,30 +100,27 @@ Evidências:
 - dump da AST é determinístico;
 - `capic --emit ast arquivo.capi` validado.
 
----
-
-## 5. Próximo Milestone
-
 ### M3 — HIR e nomes resolvidos
 
-Status: Planejado.
+Status: Concluído.
 
-Objetivo:
+Evidências:
 
-- baixar AST para HIR;
-- introduzir IDs internos;
-- criar símbolos e escopos;
-- resolver módulos, imports e nomes;
-- emitir diagnósticos de resolução;
-- produzir dump determinístico da HIR.
+- `capi-hir` implementado como modelo HIR puro;
+- `capi-lowering` implementado como fronteira AST -> HIR;
+- IDs HIR, `ScopeId` e `SymbolId` internos implementados;
+- símbolos e escopos do subconjunto inicial criados;
+- módulos, imports e nomes do subconjunto inicial resolvidos;
+- diagnósticos de duplicidade, inexistência e ambiguidade implementados;
+- dump determinístico da HIR resolvida implementado.
 
-Evidência esperada:
+Evidência validada:
 
 ```bash
 capic --emit hir arquivo.capi
 ```
 
-Documentos que devem estar aprovados antes do encerramento:
+Documentos preenchidos para o milestone:
 
 - `compiler/semantic/HIR-MODEL.md`;
 - `compiler/semantic/SYMBOL-MODEL.md`;
@@ -131,6 +128,28 @@ Documentos que devem estar aprovados antes do encerramento:
 - `compiler/semantic/NAME-RESOLUTION.md`;
 - `compiler/frontend/AST-LOWERING.md`;
 - `testing/SEMANTIC-TESTS.md`.
+
+---
+
+## 5. Próximo Milestone
+
+### M4 — Checagem semântica inicial
+
+Status: Planejado.
+
+Objetivo:
+
+- implementar modelo interno de tipos;
+- implementar inferência e verificação inicial;
+- validar coerções e regras de tipo do subconjunto inicial;
+- integrar diagnósticos de tipo ao pipeline;
+- expor checagem semântica por CLI.
+
+Evidência esperada:
+
+```bash
+capic check arquivo.capi
+```
 
 ---
 

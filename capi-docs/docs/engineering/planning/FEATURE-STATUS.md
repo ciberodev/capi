@@ -3,7 +3,7 @@
 **Projeto:** Linguagem Capi  
 **Documento:** FEATURE-STATUS  
 **Status:** Aprovado  
-**Stage:** Stages 0-2 — Fundação, frontend léxico e frontend sintático inicial  
+**Stage:** Stages 0-3 — Fundação, frontend inicial e HIR/resolução de nomes  
 **Natureza:** Registro de progresso  
 **Base normativa:** Documento 28 — Plano de Desenvolvimento da Implementação Oficial
 
@@ -530,3 +530,179 @@ O workspace Rust reconhece o subconjunto sintático inicial, constrói AST com
 spans, emite diagnósticos sintáticos estruturados, recupera erros recuperáveis,
 produz AST parcial com nós de erro, emite dump determinístico de AST por CLI e
 passa todos os testes obrigatórios definidos para o stage.
+
+---
+
+## Stage 3 — HIR e resolução de nomes
+
+```text
+Stage: Stage 3 — HIR e resolução de nomes
+Responsável: Projeto Capi
+Data de início: 2026-08-03
+Data de conclusão: 2026-08-03
+Status: Concluído
+```
+
+### Documentos concluídos
+
+Documentos de frontend e semântica preenchidos:
+
+- `compiler/frontend/AST-LOWERING.md`
+- `compiler/semantic/HIR-MODEL.md`
+- `compiler/semantic/SYMBOL-MODEL.md`
+- `compiler/semantic/SCOPE-MODEL.md`
+- `compiler/semantic/NAME-RESOLUTION.md`
+
+Documento de testes preenchido:
+
+- `testing/SEMANTIC-TESTS.md`
+
+READMEs e registros atualizados:
+
+- `docs/engineering/compiler/README.md`
+- `docs/engineering/testing/README.md`
+- `docs/engineering/planning/FEATURE-STATUS.md`
+
+### ADRs criados e aprovados
+
+Nenhuma ADR nova foi criada no Stage 3.
+
+As decisões do Stage 3 foram implementadas dentro das regras já aprovadas nos
+stages anteriores, especialmente:
+
+- `ADR-0001 — Rust como Linguagem da Implementação Oficial.md`
+- `ADR-0002 — Organização da Implementação em Workspace Cargo.md`
+- `ADR-0003 — Separação entre Frontend, Middle-end e Backend.md`
+- `ADR-0013 — Política de Dependências Externas.md`
+- `ADR-0015 — Estratégia Inicial de Testes.md`
+- `ADR-0016 — Organização Física do Repositório.md`
+
+### Infraestrutura concluída
+
+- crate `capi-hir` criado como modelo HIR puro;
+- crate `capi-lowering` criado para lowering AST -> HIR;
+- crate `capi-sema` criado para escopos, símbolos e resolução de nomes;
+- integração de `capi-hir`, `capi-lowering` e `capi-sema` ao workspace Cargo;
+- integração de HIR/resolução ao `capi-driver`;
+- integração de `--emit hir` à CLI `capic`;
+- fixtures semânticas criadas em `capi-lang/tests/semantic/`;
+- snapshots de HIR inicial e HIR resolvida criados;
+- testes de lowering e semântica adicionados.
+
+### Implementações concluídas
+
+- modelo HIR inicial implementado;
+- `capi-hir` separado da dependência direta de AST;
+- lowering de AST para HIR implementado em `capi-lowering`;
+- IDs HIR tipados e determinísticos implementados;
+- `AstToHirMap` determinístico implementado no lowering;
+- dump determinístico de HIR inicial implementado;
+- `ScopeGraph` implementado;
+- `SymbolTable` implementada;
+- `NameBindingTable` implementada;
+- `ScopeId` e `SymbolId` internos implementados;
+- registro de módulos, imports, itens, membros, parâmetros, locais e patterns
+  implementado para o subconjunto inicial;
+- resolução de nomes para valores, tipos, módulos/imports e patterns
+  implementada para o subconjunto inicial;
+- diagnósticos semânticos `SEM0001`, `SEM0002` e `SEM0003` implementados;
+- dump de HIR resolvida implementado;
+- emissão de HIR via `capic --emit hir arquivo.capi` implementada.
+
+### Testes concluídos
+
+Validação executada em `capi-lang`:
+
+```bash
+cargo test -p capi-lowering -p capi-sema
+cargo test -p capi-sema --test semantic_tests
+./scripts/check.sh
+```
+
+Cobertura obrigatória concluída:
+
+- testes de lowering AST-HIR;
+- testes de IDs HIR determinísticos;
+- testes de preservação de spans e `SourceId`;
+- testes de `AstToHirMap`;
+- testes de bloqueio de lowering para AST inválida;
+- testes de escopos do subconjunto inicial;
+- testes de símbolos do subconjunto inicial;
+- testes de bindings de patterns;
+- testes de resolução de valores, tipos, funções e shadowing;
+- testes de resolução de todos os nomes resolvíveis das fixtures pass;
+- testes de símbolos duplicados;
+- testes de referências inexistentes;
+- testes de ambiguidades;
+- testes de diagnósticos semânticos estruturados;
+- testes de dump estável de HIR resolvida;
+- testes de CLI para `capic --emit hir`.
+
+Critérios de conclusão verificados:
+
+- todos os nomes do subconjunto inicial são resolvidos;
+- erros de resolução são diagnosticados;
+- a HIR não depende diretamente da estrutura da AST;
+- símbolos possuem identidade interna estável;
+- o resultado esperado é observável por `capic --emit hir arquivo.capi`;
+- todos os testes obrigatórios passam.
+
+### Resultado demonstrável
+
+O resultado demonstrável do Stage 3 é:
+
+```bash
+capic --emit hir arquivo.capi
+```
+
+Durante desenvolvimento local:
+
+```bash
+cd capi-lang
+cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
+```
+
+A saída validada inclui:
+
+- unidade HIR;
+- imports e itens;
+- escopos;
+- símbolos;
+- bindings de nomes resolvidos.
+
+### Pendências
+
+Nenhuma pendência bloqueante do Stage 3.
+
+Itens reservados para stages posteriores:
+
+- modelo interno de tipos;
+- inferência e checagem de tipos;
+- interning/canonicalização de tipos;
+- subtipagem e coerções;
+- resolução completa de membros dependente de tipos;
+- grafo completo de módulos entre arquivos;
+- análise de ownership;
+- MIR;
+- backend;
+- runtime;
+- biblioteca padrão.
+
+### Riscos
+
+- A resolução de nomes atual cobre o subconjunto inicial e deve ser expandida
+  quando módulos multiarquivo, aliases, prelude e tipagem forem implementados.
+- O formato de dump da HIR é contrato observado e deve ser alterado apenas com
+  atualização intencional dos snapshots.
+- `capi-hir` deve permanecer sem dependência direta de `capi-ast`; mudanças no
+  lowering devem ocorrer em `capi-lowering`.
+- A MSRV `1.88.0` deve ser preservada até decisão formal de atualização.
+
+### Resultado da validação
+
+Stage 3 concluído conforme os critérios do Documento 28.
+
+O workspace Rust baixa AST para HIR, preserva rastreabilidade, cria IDs
+internos, registra símbolos, constrói escopos, resolve nomes do subconjunto
+inicial, emite diagnósticos semânticos estruturados, expõe HIR resolvida por
+CLI e passa todos os testes obrigatórios definidos para o stage.

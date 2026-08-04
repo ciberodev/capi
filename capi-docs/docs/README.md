@@ -28,7 +28,7 @@ A documentação está organizada para separar:
 
 ## Estado atual
 
-Os Stages 0, 1 e 2 da implementação oficial estão concluídos e registrados em:
+Os Stages 0, 1, 2 e 3 da implementação oficial estão concluídos e registrados em:
 
 ```text
 engineering/planning/FEATURE-STATUS.md
@@ -75,10 +75,25 @@ O Stage 2 implementou o frontend sintático inicial e entregou:
 * dump de AST via `capic --emit ast arquivo.capi`;
 * critérios de conclusão do Stage 2 validados por testes.
 
+O Stage 3 implementou HIR e resolução inicial de nomes e entregou:
+
+* documentação de lowering, HIR, símbolos, escopos e resolução de nomes;
+* documentação dos testes semânticos obrigatórios;
+* crates `capi-hir`, `capi-lowering` e `capi-sema`;
+* HIR como modelo puro, sem dependência direta da AST;
+* lowering AST -> HIR;
+* IDs HIR, `ScopeId` e `SymbolId` internos e determinísticos;
+* tabelas de símbolos e escopos;
+* resolução de nomes para o subconjunto inicial;
+* diagnósticos semânticos estruturados;
+* snapshots de HIR inicial e HIR resolvida;
+* dump de HIR resolvida via `capic --emit hir arquivo.capi`;
+* critérios de conclusão do Stage 3 validados por testes.
+
 O próximo stage planejado é:
 
 ```text
-Stage 3 — HIR e resolução de nomes
+Stage 4 — Sistema de tipos
 ```
 
 ---
@@ -104,7 +119,8 @@ Para contribuir com implementação, depois leia:
 5. `engineering/compiler/README.md`
 6. `engineering/testing/README.md`
 
-Para entender o frontend inicial entregue nos Stages 1 e 2, leia:
+Para entender o frontend inicial e a primeira análise semântica entregues nos
+Stages 1, 2 e 3, leia:
 
 1. `engineering/compiler/source/SOURCE-MODEL.md`
 2. `engineering/compiler/source/SOURCE-MAP.md`
@@ -121,17 +137,22 @@ Para entender o frontend inicial entregue nos Stages 1 e 2, leia:
 13. `engineering/compiler/frontend/PARSER-RECOVERY.md`
 14. `engineering/compiler/frontend/AST-LOWERING.md`
 15. `engineering/testing/PARSER-TESTS.md`
+16. `engineering/compiler/semantic/HIR-MODEL.md`
+17. `engineering/compiler/semantic/SYMBOL-MODEL.md`
+18. `engineering/compiler/semantic/SCOPE-MODEL.md`
+19. `engineering/compiler/semantic/NAME-RESOLUTION.md`
+20. `engineering/testing/SEMANTIC-TESTS.md`
 
 Para iniciar o próximo stage planejado, comece por:
 
 1. `engineering/planning/IMPLEMENTATION-ORDER.md`
 2. `engineering/planning/MILESTONES.md`
 3. `engineering/planning/ROADMAP.md`
-4. `engineering/compiler/semantic/HIR-MODEL.md`
-5. `engineering/compiler/semantic/SYMBOL-MODEL.md`
-6. `engineering/compiler/semantic/SCOPE-MODEL.md`
-7. `engineering/compiler/semantic/NAME-RESOLUTION.md`
-8. `engineering/testing/SEMANTIC-TESTS.md`
+4. `engineering/compiler/semantic/TYPE-MODEL.md`
+5. `engineering/compiler/semantic/TYPE-INFERENCE.md`
+6. `engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+7. `engineering/compiler/semantic/TYPE-INTERNING.md`
+8. `engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
 
 ---
 
@@ -262,6 +283,43 @@ Resultado demonstrável:
 
 ```bash
 capic --emit ast arquivo.capi
+```
+
+---
+
+## Documentos ativos do Stage 3
+
+Documentos de engenharia do compilador:
+
+```text
+engineering/compiler/frontend/AST-LOWERING.md
+engineering/compiler/semantic/HIR-MODEL.md
+engineering/compiler/semantic/SYMBOL-MODEL.md
+engineering/compiler/semantic/SCOPE-MODEL.md
+engineering/compiler/semantic/NAME-RESOLUTION.md
+```
+
+Documentos de testes:
+
+```text
+engineering/testing/SEMANTIC-TESTS.md
+```
+
+Documentos de planejamento atualizados:
+
+```text
+engineering/planning/FEATURE-STATUS.md
+engineering/planning/IMPLEMENTATION-ORDER.md
+engineering/planning/MILESTONES.md
+engineering/planning/RISK-REGISTER.md
+engineering/planning/ROADMAP.md
+engineering/planning/TECHNICAL-DEBT.md
+```
+
+Resultado demonstrável:
+
+```bash
+capic --emit hir arquivo.capi
 ```
 
 ---
