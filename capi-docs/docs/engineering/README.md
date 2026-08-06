@@ -29,15 +29,15 @@ documentos bloqueantes do stage atual.
 | --- | --- | --- |
 | `architecture/` | Ativa | Arquitetura do compilador, workspace, componentes, dependências e pipeline de compilação. |
 | `build-and-ci/` | Ativa | Sistema de build, comandos canônicos, scripts, CI, artefatos e validação automatizada. |
-| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, lexer, parser, AST, HIR e semântica inicial. |
+| `compiler/` | Ativa | Documentação específica das fases do compilador: fontes, diagnósticos, lexer, parser, AST, HIR, resolução de nomes e sistema de tipos inicial. |
 | `development/` | Ativa | Ambiente local, build a partir do código-fonte, padrões de código e guia de estilo Rust. |
 | `planning/` | Ativa | Definition of Done, status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica. |
-| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0, testes léxicos, sintáticos e semânticos dos Stages 1 a 3. |
+| `testing/` | Ativa | Estratégia oficial de testes, suíte mínima do Stage 0, testes léxicos, sintáticos e semânticos dos Stages 1 a 4. |
 
 Essas áreas possuem documentação preenchida e fazem parte da implementação
-ativa. Os documentos obrigatórios dos Stages 1, 2 e 3 estão aprovados e servem
-como contrato operacional para o frontend inicial e a primeira análise
-semântica.
+ativa. Os documentos obrigatórios dos Stages 1, 2, 3 e 4 estão aprovados e
+servem como contrato operacional para o frontend inicial, resolução de nomes e
+sistema de tipos inicial.
 
 ---
 
@@ -169,22 +169,48 @@ O resultado demonstrável é:
 capic --emit hir arquivo.capi
 ```
 
+### Stage 4
+
+O Stage 4 implementou o sistema de tipos inicial.
+
+Resultados registrados:
+
+* documentos de modelo de tipos, interning, inferência, pipeline de checagem,
+  subtipagem, coerções e generics preenchidos em `compiler/semantic/`;
+* documento de testes semânticos ampliado em `testing/SEMANTIC-TESTS.md`;
+* tipos internos, interning de tipos, inferência e verificação de tipos
+  implementados em `capi-sema`;
+* subtipagem, coerções explícitas do subconjunto inicial, resolução de chamadas,
+  overload aplicável e generics iniciais implementados;
+* diagnósticos de tipo estruturados com códigos `TYPE` implementados;
+* auditoria dos testes possíveis de `LEXER-TESTS.md`, `PARSER-TESTS.md` e
+  `SEMANTIC-TESTS.md` registrada;
+* comportamento de `capic check arquivo.capi` definido para sucesso silencioso e
+  falha com diagnóstico em stderr;
+* critérios de conclusão do Stage 4 validados por testes.
+
+O resultado demonstrável é:
+
+```bash
+capic check arquivo.capi
+```
+
 ### Próximo stage
 
 O próximo stage planejado é:
 
 ```text
-Stage 4 — Sistema de tipos
+Stage 5 — Modelo de objetos
 ```
 
-O início do Stage 4 deve passar pelos documentos de modelo de tipos, inferência,
-pipeline de checagem, interning e coerções.
+O início do Stage 5 deve partir do modelo de objetos, layouts, campos,
+métodos, inicialização e integração com o sistema de tipos já entregue.
 
 ---
 
 ## Ordem de leitura recomendada
 
-Para entender a engenharia do projeto a partir do Stage 3, leia nesta ordem:
+Para entender a engenharia do projeto até o Stage 4, leia nesta ordem:
 
 1. `ENGINEERING-PRINCIPLES.md`
 2. `PROJECT-STRUCTURE.md`
@@ -234,7 +260,7 @@ planning/FEATURE-STATUS.md
 
 ---
 
-## Documentos ativos dos Stages 1, 2 e 3
+## Documentos ativos dos Stages 1, 2, 3 e 4
 
 O Stage 1 usa os seguintes documentos de engenharia:
 
@@ -272,8 +298,21 @@ compiler/semantic/NAME-RESOLUTION.md
 testing/SEMANTIC-TESTS.md
 ```
 
+O Stage 4 usa os seguintes documentos de engenharia:
+
+```text
+compiler/semantic/TYPE-MODEL.md
+compiler/semantic/TYPE-INTERNING.md
+compiler/semantic/TYPE-INFERENCE.md
+compiler/semantic/TYPE-CHECKING-PIPELINE.md
+compiler/semantic/SUBTYPING-AND-COERCIONS.md
+compiler/semantic/GENERICS-IMPLEMENTATION.md
+testing/SEMANTIC-TESTS.md
+```
+
 Esses documentos estão em status `Aprovado` e descrevem a implementação e os
-testes entregues para o frontend inicial e a primeira análise semântica.
+testes entregues para o frontend inicial, a resolução de nomes e o sistema de
+tipos inicial.
 
 ---
 
@@ -307,10 +346,11 @@ cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
+cargo run -p capi-cli --bin capic -- check tests/semantic/pass/basic.cap
 ```
 
 Esses comandos validam a implementação atual do workspace, incluindo os critérios
-obrigatórios dos Stages 1, 2 e 3.
+obrigatórios dos Stages 1, 2, 3 e 4.
 
 A validação consolidada do workspace é:
 
@@ -353,9 +393,9 @@ A documentação de engenharia deve permanecer sincronizada com:
 ```
 
 Mudanças estruturais no workspace, dependências, toolchain, CI, crates
-fundamentais, frontend, AST, parser, HIR, semântica inicial ou layout de testes
-devem ser refletidas nos documentos de engenharia e, quando forem decisões
-arquiteturais, nas ADRs correspondentes.
+fundamentais, frontend, AST, parser, HIR, semântica inicial, sistema de tipos ou
+layout de testes devem ser refletidas nos documentos de engenharia e, quando
+forem decisões arquiteturais, nas ADRs correspondentes.
 
 ---
 

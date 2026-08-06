@@ -22,7 +22,7 @@ fn help_prints_usage() {
     assert!(output.status.success());
     assert_eq!(
         stdout(&output),
-        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic arquivo.capi\n"
+        "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic check arquivo.capi\n  capic arquivo.capi\n"
     );
     assert!(stderr(&output).is_empty());
 }
@@ -213,4 +213,140 @@ fn emit_hir_returns_failure_for_syntax_error() {
     assert!(stderr.contains("CompilationUnit"));
     assert!(stderr.contains("error[PARSE0002]: expected function name"));
     assert!(stderr.contains("error[PARSE0006]: expected expression"));
+}
+
+#[test]
+fn check_accepts_type_checked_program() {
+    let path = std::env::temp_dir().join("capic-cli-check-pass.cap");
+    std::fs::write(
+        &path,
+        "function id(value : Int) : Int { return value; } function main() { let result = id(1); }",
+    )
+    .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn check_reports_type_errors() {
+    let path = std::env::temp_dir().join("capic-cli-check-fail.cap");
+    std::fs::write(&path, "function main() { let value : Bool = 1; }")
+        .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("error[TYPE0003]"));
+    assert!(stderr.contains("type mismatch"));
+}
+
+#[test]
+fn check_reports_unresolved_type() {
+    let path = std::env::temp_dir().join("capic-cli-check-unresolved-type.cap");
+    std::fs::write(&path, "function main(value : Missing) { value; }")
+        .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("error[SEM0002]"));
+    assert!(stderr.contains("unresolved name `Missing`"));
+    assert!(stderr.contains("error[TYPE0002]"));
+    assert!(stderr.contains("unknown type `Missing`"));
+}
+
+#[test]
+fn check_accepts_valid_upcast() {
+    let path = std::env::temp_dir().join("capic-cli-check-upcast.cap");
+    std::fs::write(
+        &path,
+        "class Animal {} class Dog extends Animal {} function take(value : Animal) : Animal { return value; } function main(dog : Dog) { take(dog); }",
+    )
+    .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn check_accepts_valid_generic_application() {
+    let path = std::env::temp_dir().join("capic-cli-check-generics.cap");
+    std::fs::write(
+        &path,
+        "class Box<T> {} function main(value : Box<Int>) { value; }",
+    )
+    .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+
+    let _ = std::fs::remove_file(path);
+    assert!(output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr(&output).is_empty());
+}
+
+#[test]
+fn check_reports_type_errors_deterministically() {
+    let path = std::env::temp_dir().join("capic-cli-check-deterministic.cap");
+    std::fs::write(&path, "function main() : Bool { return 1; }")
+        .expect("fixture should be written");
+
+    let first = run_capic(&["check", path.to_str().unwrap()]);
+    let second = run_capic(&["check", path.to_str().unwrap()]);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!first.status.success());
+    assert!(!second.status.success());
+    assert_eq!(stdout(&first), stdout(&second));
+    assert_eq!(stderr(&first), stderr(&second));
+}
+
+#[test]
+fn check_reports_call_without_applicable_candidate() {
+    let path = std::env::temp_dir().join("capic-cli-check-non-callable.cap");
+    std::fs::write(&path, "function main() { let value = 1; value(); }")
+        .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("error[TYPE0005]"));
+    assert!(stderr.contains("callee has no callable signature"));
+}
+
+#[test]
+fn check_reports_invalid_generic_application() {
+    let path = std::env::temp_dir().join("capic-cli-check-invalid-generics.cap");
+    std::fs::write(
+        &path,
+        "class Box<T> {} function main(value : Box<Int, Bool>) { value; }",
+    )
+    .expect("fixture should be written");
+
+    let output = run_capic(&["check", path.to_str().unwrap()]);
+    let stderr = stderr(&output);
+
+    let _ = std::fs::remove_file(path);
+    assert!(!output.status.success());
+    assert!(stdout(&output).is_empty());
+    assert!(stderr.contains("error[TYPE0008]"));
+    assert!(stderr.contains("invalid generic arity"));
 }

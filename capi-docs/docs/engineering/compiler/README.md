@@ -16,8 +16,9 @@ e os documentos de engenharia bloqueantes do stage atual.
 
 ## Estado Atual
 
-O Stage 3 do compilador está concentrado na HIR, no lowering da AST para HIR e
-na primeira etapa semântica de escopos, símbolos e resolução de nomes.
+O Stage 4 do compilador concluiu o sistema de tipos do subconjunto inicial. O
+compilador agora lê fontes, produz tokens, constrói AST, baixa para HIR, resolve
+nomes e executa inferência/verificação de tipos por `capic check arquivo.capi`.
 
 O Stage 1 entregou a infraestrutura de fontes, diagnósticos, tokens e lexer:
 
@@ -48,7 +49,7 @@ O Stage 2 ampliou essa base com parser e AST:
 * testes obrigatórios de declarações, expressões, precedência, tipos, classes,
   erros sintáticos, recuperação, spans e dump da AST.
 
-O Stage 3 amplia o frontend com HIR e análise semântica inicial:
+O Stage 3 ampliou o frontend com HIR e análise semântica inicial:
 
 * `capi-hir` como modelo HIR puro, sem dependência direta da AST;
 * `capi-lowering` como fronteira AST -> HIR;
@@ -62,6 +63,27 @@ O Stage 3 amplia o frontend com HIR e análise semântica inicial:
 * dump determinístico de HIR resolvida via `capic --emit hir arquivo.capi`;
 * testes obrigatórios de lowering, HIR, escopos, símbolos, resolução,
   diagnósticos semânticos e CLI.
+
+O Stage 4 ampliou a análise semântica com sistema de tipos:
+
+* representação interna de tipos com `TypeId`;
+* interning/canonicalização de tipos;
+* built-ins de tipos;
+* tabela de tipos associada a HIR, símbolos, parâmetros, locais, expressões,
+  statements, patterns e assinaturas;
+* inferência de tipos para literais, paths, chamadas, membros, indexação,
+  operações, atribuição, tuples, arrays e `new` no subconjunto inicial;
+* verificação de tipos para locais, retornos, condições, argumentos, chamadas e
+  atribuições;
+* subtipagem nominal inicial para reflexividade, herança, herança transitiva e
+  interfaces implementadas;
+* coerções de upcast registradas;
+* resolução de chamadas simples e métodos de membro;
+* generics iniciais por aridade, instanciação, duplicidade e invariância;
+* diagnósticos de tipo estruturados;
+* comando `capic check arquivo.capi`;
+* testes obrigatórios de tipos, interning, inferência, type checking,
+  subtipagem, coerções, generics, diagnósticos e CLI.
 
 A implementação correspondente vive em:
 
@@ -80,7 +102,7 @@ A implementação correspondente vive em:
 
 ---
 
-## Documentos Ativos dos Stages 1, 2 e 3
+## Documentos Ativos dos Stages 1, 2, 3 e 4
 
 ### Fontes
 
@@ -111,6 +133,17 @@ A implementação correspondente vive em:
 | `semantic/SCOPE-MODEL.md` | Aprovado | Define escopos, owners, hierarquia e relação HIR-escopo. |
 | `semantic/NAME-RESOLUTION.md` | Aprovado | Define resolução de nomes, bindings e diagnósticos de resolução. |
 
+### Sistema de Tipos
+
+| Documento | Status | Finalidade |
+| --- | --- | --- |
+| `semantic/TYPE-MODEL.md` | Aprovado | Define representação interna de tipos, propriedades, origens e relação com HIR/símbolos. |
+| `semantic/TYPE-INTERNING.md` | Aprovado | Define canonicalização, built-ins, interning e estabilidade de `TypeId`. |
+| `semantic/TYPE-INFERENCE.md` | Aprovado | Define inferência de tipos do subconjunto inicial e interação com diagnósticos. |
+| `semantic/TYPE-CHECKING-PIPELINE.md` | Aprovado | Define o pipeline de checagem de tipos, estados e integração com `capic check`. |
+| `semantic/SUBTYPING-AND-COERCIONS.md` | Aprovado | Define subtipagem, coerções, upcasts e conversões proibidas. |
+| `semantic/GENERICS-IMPLEMENTATION.md` | Aprovado | Define generics do subconjunto inicial, aridade, instanciação e limites aceitos. |
+
 ### Diagnósticos
 
 | Documento | Status | Finalidade |
@@ -119,7 +152,7 @@ A implementação correspondente vive em:
 | `diagnostics/DIAGNOSTIC-ARCHITECTURE.md` | Aprovado | Define fluxo de produção, agregação e renderização de diagnósticos. |
 | `diagnostics/DIAGNOSTIC-STYLE-GUIDE.md` | Aprovado | Define estilo de mensagens, labels e notas para diagnósticos. |
 
-Esses documentos formam o contrato operacional dos Stages 1, 2 e 3.
+Esses documentos formam o contrato operacional dos Stages 1, 2, 3 e 4.
 
 ---
 
@@ -132,17 +165,6 @@ Esses documentos formam o contrato operacional dos Stages 1, 2 e 3.
 | `diagnostics/ERROR-CODE-POLICY.md` | Consolidar política completa de códigos de erro. |
 | `diagnostics/OUTPUT-FORMATS.md` | Definir formatos humano, JSON e possíveis formatos de tooling. |
 | `diagnostics/INTERNAL-COMPILER-ERRORS.md` | Definir política de ICEs, invariantes e mensagens internas. |
-
-### Semântica
-
-| Documento | Finalidade esperada |
-| --- | --- |
-| `semantic/TYPE-MODEL.md` | Definir representação de tipos. |
-| `semantic/TYPE-INFERENCE.md` | Definir inferência de tipos. |
-| `semantic/TYPE-CHECKING-PIPELINE.md` | Definir pipeline de checagem semântica. |
-| `semantic/TYPE-INTERNING.md` | Definir interning/canonicalização de tipos. |
-| `semantic/GENERICS-IMPLEMENTATION.md` | Definir implementação de generics. |
-| `semantic/SUBTYPING-AND-COERCIONS.md` | Definir subtipagem e coerções. |
 
 ### Memória
 
@@ -196,7 +218,7 @@ obrigações próprias para a implementação.
 
 ---
 
-## Resultado Demonstrável dos Stages 1, 2 e 3
+## Resultado Demonstrável dos Stages 1, 2, 3 e 4
 
 O resultado observável mínimo do lexer é:
 
@@ -270,6 +292,31 @@ Entradas com erro semântico de resolução devem produzir diagnóstico estrutur
 e retornar falha controlada. O dump pode exibir bindings como `not_found` ou
 `ambiguous` quando a HIR resolvida parcial for útil para depuração.
 
+O resultado observável mínimo do sistema de tipos é:
+
+```bash
+capic check arquivo.capi
+```
+
+Durante desenvolvimento local, execute a partir de `capi-lang/`:
+
+```bash
+cargo run -p capi-cli -- check /tmp/stage4-ok.cap
+```
+
+O comando deve:
+
+* retornar código de saída `0` e não emitir saída para programa válido;
+* retornar código de saída diferente de `0` para programa inválido;
+* emitir diagnósticos de tipo estruturados em stderr;
+* manter stdout vazio no modo `check`.
+
+Exemplo de diagnóstico validado:
+
+```text
+error[TYPE0003]: type mismatch: expected Bool, found Int
+```
+
 ---
 
 ## Critérios de Conclusão do Stage 1
@@ -331,6 +378,36 @@ e CLI.
 
 ---
 
+## Critérios de Conclusão do Stage 4
+
+O Stage 4 é considerado concluído para o subconjunto implementado quando:
+
+* tipos internos são representados por IDs tipados e determinísticos;
+* built-ins e tipos compostos são internados de forma canônica;
+* locais, expressões, chamadas, retornos, condições e atribuições são tipados;
+* programas válidos do subconjunto inicial chegam a `Checked`;
+* programas inválidos do subconjunto inicial chegam a `CheckedWithErrors` ou
+  `Blocked`, conforme a causa;
+* subtipagem nominal inicial aceita reflexividade, herança, herança transitiva e
+  interfaces implementadas;
+* coerções de upcast são registradas e coerções proibidas do subconjunto são
+  rejeitadas;
+* generics iniciais validam aridade, instanciação, duplicidade e invariância;
+* diagnósticos de tipo são estruturados e determinísticos;
+* o resultado esperado pode ser obtido por `capic check arquivo.capi`;
+* todos os testes obrigatórios aplicáveis passam.
+
+Esses critérios são cobertos por testes nos crates `capi-sema`, `capi-driver` e
+`capi-cli`, incluindo testes de modelo de tipos, interning, inferência,
+type checking, subtipagem, coerções, generics, diagnósticos, determinismo e CLI.
+
+Débitos técnicos aceitos do Stage 4 ficam registrados em
+`../planning/TECHNICAL-DEBT.md`, incluindo `ObjectId<T>` público, overload por
+coerções, bounds/substituição genérica, `Optional<T>`, `Result<T, E>` e dump
+tipado formal.
+
+---
+
 ## Comandos Canônicos de Validação
 
 Execute a partir de `capi-lang/`:
@@ -342,11 +419,14 @@ cargo clippy --workspace --all-targets
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
+cargo run -p capi-cli -- check /tmp/stage4-ok.cap
 ```
 
 Esses comandos validam formatação, testes obrigatórios, lint, o resultado
 demonstrável do lexer, o resultado demonstrável do parser/AST e o resultado
-demonstrável da HIR resolvida.
+demonstrável da HIR resolvida. O último comando valida o resultado demonstrável
+do sistema de tipos quando `/tmp/stage4-ok.cap` contiver um programa válido do
+subconjunto inicial.
 
 A validação consolidada do workspace é:
 
@@ -358,7 +438,7 @@ A validação consolidada do workspace é:
 
 ## Ordem de Leitura Recomendada
 
-Para entender os Stages 1, 2 e 3, leia nesta ordem:
+Para entender os Stages 1, 2, 3 e 4, leia nesta ordem:
 
 1. `source/SOURCE-MODEL.md`
 2. `source/SOURCE-MAP.md`
@@ -379,12 +459,18 @@ Para entender os Stages 1, 2 e 3, leia nesta ordem:
 17. `semantic/SCOPE-MODEL.md`
 18. `semantic/SYMBOL-MODEL.md`
 19. `semantic/NAME-RESOLUTION.md`
-20. `../testing/SEMANTIC-TESTS.md`
+20. `semantic/TYPE-MODEL.md`
+21. `semantic/TYPE-INTERNING.md`
+22. `semantic/TYPE-INFERENCE.md`
+23. `semantic/TYPE-CHECKING-PIPELINE.md`
+24. `semantic/SUBTYPING-AND-COERCIONS.md`
+25. `semantic/GENERICS-IMPLEMENTATION.md`
+26. `../testing/SEMANTIC-TESTS.md`
 
 Essa ordem começa pelo modelo de fontes, conecta localização e diagnósticos,
 passa pelo contrato de tokens, lexer, AST, parser, recuperação, lowering e
-termina na HIR, escopos, símbolos, resolução de nomes e estratégia de testes
-semânticos.
+termina na HIR, escopos, símbolos, resolução de nomes, sistema de tipos e
+estratégia de testes semânticos.
 
 ---
 

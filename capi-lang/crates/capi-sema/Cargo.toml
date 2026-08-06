@@ -9,10 +9,10 @@ repository.workspace = true
 [dependencies]
 capi-diagnostics.workspace = true
 capi-hir.workspace = true
+capi-lexer.workspace = true
 capi-source.workspace = true
 
 [dev-dependencies]
-capi-lexer.workspace = true
 capi-lowering.workspace = true
 capi-parser.workspace = true
 

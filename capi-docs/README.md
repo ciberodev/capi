@@ -24,7 +24,8 @@ implementação oficial. A implementação Rust vive fora deste pacote, em
 
 ## Estado atual
 
-Os Stages 0, 1, 2 e 3 da implementação oficial estão concluídos e registrados em:
+Os Stages 0, 1, 2, 3 e 4 da implementação oficial estão concluídos e
+registrados em:
 
 ```text
 docs/engineering/planning/FEATURE-STATUS.md
@@ -79,10 +80,23 @@ O Stage 3 implementou HIR e resolução inicial de nomes e consolidou:
 * dump de HIR resolvida via `capic --emit hir arquivo.capi`;
 * critérios de conclusão do Stage 3 validados por testes.
 
+O Stage 4 implementou o sistema de tipos inicial e consolidou:
+
+* documentação de modelo de tipos, interning, inferência, pipeline de checagem,
+  subtipagem, coerções e generics;
+* documentação semântica de testes ampliada;
+* tipos internos, interning, inferência e verificação de tipos;
+* subtipagem, coerções explícitas, resolução de chamadas e overload aplicável do
+  subconjunto inicial;
+* generics iniciais e diagnósticos de tipo estruturados;
+* auditoria dos testes possíveis de lexer, parser e semântica;
+* checagem semântica via `capic check arquivo.capi`;
+* critérios de conclusão do Stage 4 validados por testes.
+
 O próximo stage planejado é:
 
 ```text
-Stage 4 — Sistema de tipos
+Stage 5 — Modelo de objetos
 ```
 
 O histórico documental está registrado em:
@@ -115,8 +129,8 @@ Para começar pela engenharia da implementação:
 5. `docs/engineering/compiler/README.md`
 6. `docs/engineering/testing/README.md`
 
-Para entender o frontend inicial e a primeira análise semântica entregues nos
-Stages 1, 2 e 3:
+Para entender o frontend inicial, a resolução de nomes e o sistema de tipos
+entregues nos Stages 1, 2, 3 e 4:
 
 1. `docs/engineering/compiler/source/SOURCE-MODEL.md`
 2. `docs/engineering/compiler/source/SOURCE-MAP.md`
@@ -137,18 +151,22 @@ Stages 1, 2 e 3:
 17. `docs/engineering/compiler/semantic/SYMBOL-MODEL.md`
 18. `docs/engineering/compiler/semantic/SCOPE-MODEL.md`
 19. `docs/engineering/compiler/semantic/NAME-RESOLUTION.md`
-20. `docs/engineering/testing/SEMANTIC-TESTS.md`
+20. `docs/engineering/compiler/semantic/TYPE-MODEL.md`
+21. `docs/engineering/compiler/semantic/TYPE-INTERNING.md`
+22. `docs/engineering/compiler/semantic/TYPE-INFERENCE.md`
+23. `docs/engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+24. `docs/engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+25. `docs/engineering/compiler/semantic/GENERICS-IMPLEMENTATION.md`
+26. `docs/engineering/testing/SEMANTIC-TESTS.md`
 
 Para iniciar o próximo stage planejado:
 
 1. `docs/engineering/planning/IMPLEMENTATION-ORDER.md`
 2. `docs/engineering/planning/MILESTONES.md`
 3. `docs/engineering/planning/ROADMAP.md`
-4. `docs/engineering/compiler/semantic/TYPE-MODEL.md`
-5. `docs/engineering/compiler/semantic/TYPE-INFERENCE.md`
-6. `docs/engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
-7. `docs/engineering/compiler/semantic/TYPE-INTERNING.md`
-8. `docs/engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+4. `docs/engineering/planning/FEATURE-STATUS.md`
+5. `docs/engineering/planning/RISK-REGISTER.md`
+6. `docs/engineering/planning/TECHNICAL-DEBT.md`
 
 ---
 
@@ -185,7 +203,7 @@ capi/
 
 `capi-lang` contém a implementação oficial em Rust, incluindo os crates iniciais
 do compilador, `capi-ast`, `capi-parser`, `capi-hir`, `capi-lowering`,
-`capi-sema` e o executável `capic`.
+`capi-sema`, o sistema de tipos inicial e o executável `capic`.
 
 Mudanças em especificação, ADRs, engenharia ou progresso de stages devem ser
 refletidas nos índices correspondentes e registradas no `CHANGELOG.md` quando

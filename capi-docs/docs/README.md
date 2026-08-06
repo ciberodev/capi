@@ -28,7 +28,8 @@ A documentação está organizada para separar:
 
 ## Estado atual
 
-Os Stages 0, 1, 2 e 3 da implementação oficial estão concluídos e registrados em:
+Os Stages 0, 1, 2, 3 e 4 da implementação oficial estão concluídos e
+registrados em:
 
 ```text
 engineering/planning/FEATURE-STATUS.md
@@ -90,10 +91,24 @@ O Stage 3 implementou HIR e resolução inicial de nomes e entregou:
 * dump de HIR resolvida via `capic --emit hir arquivo.capi`;
 * critérios de conclusão do Stage 3 validados por testes.
 
+O Stage 4 implementou o sistema de tipos inicial e entregou:
+
+* documentação de modelo de tipos, interning, inferência, pipeline de checagem,
+  subtipagem, coerções e generics;
+* ampliação da documentação de testes semânticos obrigatórios;
+* tipos internos, interning de tipos, inferência e verificação de tipos;
+* subtipagem, coerções explícitas, resolução de chamadas e overload aplicável do
+  subconjunto inicial;
+* generics do subconjunto inicial;
+* diagnósticos de tipo estruturados;
+* auditoria de cobertura dos testes possíveis de lexer, parser e semântica;
+* checagem semântica via `capic check arquivo.capi`;
+* critérios de conclusão do Stage 4 validados por testes.
+
 O próximo stage planejado é:
 
 ```text
-Stage 4 — Sistema de tipos
+Stage 5 — Modelo de objetos
 ```
 
 ---
@@ -119,8 +134,8 @@ Para contribuir com implementação, depois leia:
 5. `engineering/compiler/README.md`
 6. `engineering/testing/README.md`
 
-Para entender o frontend inicial e a primeira análise semântica entregues nos
-Stages 1, 2 e 3, leia:
+Para entender o frontend inicial, a resolução de nomes e o sistema de tipos
+entregues nos Stages 1, 2, 3 e 4, leia:
 
 1. `engineering/compiler/source/SOURCE-MODEL.md`
 2. `engineering/compiler/source/SOURCE-MAP.md`
@@ -141,18 +156,22 @@ Stages 1, 2 e 3, leia:
 17. `engineering/compiler/semantic/SYMBOL-MODEL.md`
 18. `engineering/compiler/semantic/SCOPE-MODEL.md`
 19. `engineering/compiler/semantic/NAME-RESOLUTION.md`
-20. `engineering/testing/SEMANTIC-TESTS.md`
+20. `engineering/compiler/semantic/TYPE-MODEL.md`
+21. `engineering/compiler/semantic/TYPE-INTERNING.md`
+22. `engineering/compiler/semantic/TYPE-INFERENCE.md`
+23. `engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+24. `engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+25. `engineering/compiler/semantic/GENERICS-IMPLEMENTATION.md`
+26. `engineering/testing/SEMANTIC-TESTS.md`
 
 Para iniciar o próximo stage planejado, comece por:
 
 1. `engineering/planning/IMPLEMENTATION-ORDER.md`
 2. `engineering/planning/MILESTONES.md`
 3. `engineering/planning/ROADMAP.md`
-4. `engineering/compiler/semantic/TYPE-MODEL.md`
-5. `engineering/compiler/semantic/TYPE-INFERENCE.md`
-6. `engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`
-7. `engineering/compiler/semantic/TYPE-INTERNING.md`
-8. `engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+4. `engineering/planning/FEATURE-STATUS.md`
+5. `engineering/planning/RISK-REGISTER.md`
+6. `engineering/planning/TECHNICAL-DEBT.md`
 
 ---
 
@@ -320,6 +339,44 @@ Resultado demonstrável:
 
 ```bash
 capic --emit hir arquivo.capi
+```
+
+---
+
+## Documentos ativos do Stage 4
+
+Documentos de engenharia do compilador:
+
+```text
+engineering/compiler/semantic/TYPE-MODEL.md
+engineering/compiler/semantic/TYPE-INTERNING.md
+engineering/compiler/semantic/TYPE-INFERENCE.md
+engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md
+engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md
+engineering/compiler/semantic/GENERICS-IMPLEMENTATION.md
+```
+
+Documentos de testes:
+
+```text
+engineering/testing/SEMANTIC-TESTS.md
+```
+
+Documentos de planejamento atualizados:
+
+```text
+engineering/planning/FEATURE-STATUS.md
+engineering/planning/IMPLEMENTATION-ORDER.md
+engineering/planning/MILESTONES.md
+engineering/planning/RISK-REGISTER.md
+engineering/planning/ROADMAP.md
+engineering/planning/TECHNICAL-DEBT.md
+```
+
+Resultado demonstrável:
+
+```bash
+capic check arquivo.capi
 ```
 
 ---

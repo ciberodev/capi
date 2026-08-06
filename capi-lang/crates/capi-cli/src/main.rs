@@ -44,6 +44,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> DriverRequest {
         [flag, kind, ..] if flag == "--emit" => DriverRequest::InvalidArguments {
             message: format!("unsupported emit kind '{kind}'"),
         },
+        [command, path] if command == "check" => DriverRequest::CheckTypes {
+            path: PathBuf::from(path),
+        },
+        [command, _, extra, ..] if command == "check" => DriverRequest::InvalidArguments {
+            message: format!("unexpected argument '{extra}'"),
+        },
         [flag] if flag.starts_with('-') => DriverRequest::InvalidArguments {
             message: format!("unknown option '{flag}'"),
         },

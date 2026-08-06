@@ -53,6 +53,7 @@ de impacto futuro. Dívidas aceitas ficam em `TECHNICAL-DEBT.md`.
 | R-006 | Novas dependências externas serem introduzidas sem ADR ou revisão. | Baixa | Alto | Monitorado | Aplicar `DEPENDENCY-RULES.md`, `DEPENDENCIES.md` e `ADR-0013`. |
 | R-007 | MSRV ser elevada acidentalmente por ferramenta, dependência ou código novo. | Média | Médio | Monitorado | Preservar MSRV `1.88.0` até decisão formal. |
 | R-008 | Stages futuros de ownership e Domains exigirem ajustes no modelo de HIR. | Média | Alto | Aberto | Evoluir HIR preservando rastreabilidade, IDs e fronteiras entre `capi-hir`, `capi-lowering` e fases semânticas. |
+| R-009 | Modelo de objetos exigir ajustes no sistema de tipos inicial. | Média | Alto | Monitorado | Registrar dívidas de `ObjectId<T>`, overload e generics em `TECHNICAL-DEBT.md`; evoluir Stage 5 preservando testes de Stage 4. |
 
 ---
 
@@ -68,29 +69,33 @@ de impacto futuro. Dívidas aceitas ficam em `TECHNICAL-DEBT.md`.
 | R-105 | HIR ficar acoplada diretamente à estrutura da AST. | `capi-hir` separado como modelo puro e lowering movido para `capi-lowering`. |
 | R-106 | Resolução de nomes depender de ordem instável. | IDs internos, mapas ordenados e testes de determinismo adicionados. |
 | R-107 | Erros de resolução sem diagnósticos estruturados. | Diagnósticos `SEM0001`, `SEM0002` e `SEM0003` testados com spans e labels. |
+| R-108 | Inferência e type checking dependerem de ordem acidental ou emitirem diagnósticos instáveis. | `TypeInterner`, tabelas ordenadas, testes de determinismo, `capic check` e diagnósticos de tipo estruturados implementados no Stage 4. |
+| R-109 | Coerções implícitas serem aceitas antes de regras normativas suficientes. | Stage 4 restringiu coerções ao upcast nominal do subconjunto e registrou lacunas de `ObjectId<T>`/overload em `TECHNICAL-DEBT.md`. |
 
 ---
 
 ## 5. Riscos Por Próximo Stage
 
-### Stage 4 — Sistema de tipos
+### Stage 5 — Modelo de objetos
 
 Riscos prioritários:
 
-- tipos internos anteciparem decisões ainda não especificadas;
-- inferência depender de ordem acidental de resolução;
-- diagnósticos de tipo confundirem erro de resolução com erro de tipo;
-- generics iniciais criarem contratos incompatíveis com stages posteriores;
-- coerções implícitas serem aceitas antes de regras normativas suficientes.
+- modelo de objetos exigir mudanças incompatíveis no sistema de tipos inicial;
+- `ObjectId<T>` público alterar regras de subtipagem e coerção;
+- validação de overrides exigir resolução de membros mais completa;
+- layout, vtables e despacho dinâmico anteciparem decisões de MIR/backend;
+- hierarquias de classes e interfaces criarem ambiguidades não cobertas pelo
+  overload simples atual.
 
 Mitigações esperadas:
 
-- preencher `TYPE-MODEL.md`, `TYPE-INFERENCE.md`, `TYPE-CHECKING-PIPELINE.md`,
-  `TYPE-INTERNING.md` e `SUBTYPING-AND-COERCIONS.md` antes da implementação;
-- separar erros de resolução de erros de tipo;
-- testar inferência, checagem, coerções e diagnósticos de tipo por casos
-  pequenos e determinísticos;
-- preservar IDs e origem HIR nas estruturas de tipo.
+- preservar os testes de Stage 4 como regressão;
+- remover ou reduzir dívidas `TD-S4-001`, `TD-S4-002` e `TD-S4-003` ao
+  introduzir `ObjectId<T>` público;
+- manter layout/despacho separados de decisões de backend até os stages de MIR
+  e runtime;
+- adicionar testes pequenos para overrides, herança, interfaces e identidade;
+- atualizar `TECHNICAL-DEBT.md` quando uma limitação de objetos for aceita.
 
 ---
 

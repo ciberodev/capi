@@ -163,6 +163,21 @@ fn basic_dump_matches_snapshot() {
 }
 
 #[test]
+fn empty_file_dump_contains_only_eof_at_final_offset() {
+    let (sources, tokens, diagnostics) = lex_text("empty.cap", "");
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0].kind(), &TokenKind::Eof);
+    assert_eq!(tokens[0].span().start(), tokens[0].span().end());
+    assert_eq!(tokens[0].span().start().raw(), 0);
+    assert_eq!(
+        dump_tokens(&tokens, &sources),
+        "0    Eof empty.cap:1:1..1:1\n"
+    );
+}
+
+#[test]
 fn lexes_operator_fixture_with_maximal_munch() {
     let (_, tokens, diagnostics) = lex_fixture("tests/lexer/pass/operators.cap");
 
@@ -452,6 +467,47 @@ fn discards_line_and_block_comments() {
 }
 
 #[test]
+fn treats_comment_openers_as_comments_not_operators() {
+    let (sources, tokens, diagnostics) =
+        lex_text("comment-openers.cap", "a // + - *\nb /* == <= */ c");
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Identifier,
+            TokenKind::Identifier,
+            TokenKind::Identifier,
+        ]
+    );
+    assert_eq!(token_texts(&sources, &tokens), vec!["a", "b", "c"]);
+}
+
+#[test]
+fn discards_multiline_block_comment_and_line_comment_to_eof() {
+    let (sources, tokens, diagnostics) = lex_text(
+        "comment-forms.cap",
+        "let /* line 1\nolá\nline 3 */ value = 1; // ignored to eof",
+    );
+
+    assert!(diagnostics.is_empty());
+    assert_eq!(
+        non_eof_kinds(&tokens),
+        vec![
+            TokenKind::Keyword(Keyword::Let),
+            TokenKind::Identifier,
+            TokenKind::Operator(Operator::Equal),
+            TokenKind::Literal(LiteralKind::Integer),
+            TokenKind::Delimiter(Delimiter::Semicolon),
+        ]
+    );
+    assert_eq!(
+        token_texts(&sources, &tokens),
+        vec!["let", "value", "=", "1", ";"]
+    );
+}
+
+#[test]
 fn discards_block_comments_with_unicode_and_nested_openers_as_content() {
     let (sources, tokens, diagnostics) = lex_text(
         "unicode-comments.cap",
@@ -472,6 +528,48 @@ fn discards_block_comments_with_unicode_and_nested_openers_as_content() {
         token_texts(&sources, &tokens),
         vec!["let", "value", "=", "1"]
     );
+}
+
+#[test]
+fn token_dumps_are_deterministic_for_required_forms() {
+    for (path, text, expected_fragments) in [
+        (
+            "dump-keywords.cap",
+            "function main() { return true; }",
+            vec!["Keyword(Function)", "Identifier", "Literal(Bool)"],
+        ),
+        (
+            "dump-literals.cap",
+            "let s = \"olá\"; let c = 'ç';",
+            vec!["Literal(String)", "Literal(Char)"],
+        ),
+        (
+            "dump-operators.cap",
+            "a === b && c <= d",
+            vec!["EqualEqualEqual", "AmpAmp", "LessEqual"],
+        ),
+        (
+            "dump-comments.cap",
+            "let /* ignored */ value = 1;",
+            vec!["Keyword(Let)", "Identifier", "Literal(Integer)"],
+        ),
+    ] {
+        let (first_sources, first_tokens, first_diagnostics) = lex_text(path, text);
+        let (second_sources, second_tokens, second_diagnostics) = lex_text(path, text);
+        let first_dump = dump_tokens(&first_tokens, &first_sources);
+        let second_dump = dump_tokens(&second_tokens, &second_sources);
+
+        assert!(first_diagnostics.is_empty());
+        assert!(second_diagnostics.is_empty());
+        assert_eq!(first_dump, second_dump);
+        assert!(!first_dump.contains("0x"));
+        for fragment in expected_fragments {
+            assert!(
+                first_dump.contains(fragment),
+                "dump for {path} should contain {fragment}: {first_dump}"
+            );
+        }
+    }
 }
 
 #[test]

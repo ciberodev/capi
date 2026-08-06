@@ -8,6 +8,79 @@ quando houver política de release ou changelog específico.
 
 ---
 
+## 2026-08-06 — Consolidação documental do Stage 4
+
+### Adicionado
+
+* Documentos do sistema de tipos inicial:
+  * `docs/engineering/compiler/semantic/TYPE-MODEL.md`;
+  * `docs/engineering/compiler/semantic/TYPE-INTERNING.md`;
+  * `docs/engineering/compiler/semantic/TYPE-INFERENCE.md`;
+  * `docs/engineering/compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
+  * `docs/engineering/compiler/semantic/SUBTYPING-AND-COERCIONS.md`;
+  * `docs/engineering/compiler/semantic/GENERICS-IMPLEMENTATION.md`.
+
+### Atualizado
+
+* `docs/engineering/testing/SEMANTIC-TESTS.md` para cobrir os testes possíveis
+  do Stage 4.
+* `docs/engineering/planning/FEATURE-STATUS.md`, `IMPLEMENTATION-ORDER.md`,
+  `MILESTONES.md`, `ROADMAP.md`, `RISK-REGISTER.md` e `TECHNICAL-DEBT.md` para
+  registrar a conclusão do Stage 4 e o Stage 5 como próximo.
+* `docs/engineering/planning/README.md` para refletir o estado consolidado do
+  planejamento após a implementação do sistema de tipos.
+* `docs/engineering/compiler/README.md` para promover os documentos de tipos a
+  documentos ativos do compilador.
+* `docs/engineering/testing/README.md` para registrar a cobertura semântica do
+  Stage 4 e o comportamento de `capic check`.
+* `docs/engineering/README.md`, `docs/README.md` e `README.md` da raiz de
+  `capi-docs` para registrar os Stages 0, 1, 2, 3 e 4 como concluídos e apontar
+  o Stage 5 como próximo.
+
+### Registrado
+
+* Entregas de implementação do Stage 4:
+  * tipos internos;
+  * interning de tipos;
+  * inferência;
+  * verificação de tipos;
+  * subtipagem;
+  * coerções explícitas do subconjunto inicial;
+  * resolução de chamadas;
+  * overload aplicável;
+  * generics do subconjunto inicial;
+  * diagnósticos de tipo.
+* Critérios de conclusão do Stage 4:
+  * programas válidos são tipados corretamente;
+  * programas inválidos são rejeitados;
+  * resultados de inferência são determinísticos;
+  * subtipagem respeita o subconjunto especificado;
+  * todos os testes semânticos implementáveis passam.
+* Comportamento demonstrável:
+
+```bash
+capic check arquivo.capi
+```
+
+Em sucesso, o comando encerra com exit code `0` sem imprimir saída. Em erro, ele
+encerra com exit code diferente de zero e imprime o diagnóstico em stderr.
+
+* Dívidas técnicas aceitas para stages futuros:
+  * `ObjectId<Sub>` para `ObjectId<Super>`;
+  * rejeição de `ObjectId<Super>` para `ObjectId<Sub>`;
+  * conversão proibida entre `ObjectId<T>` e inteiro;
+  * ambiguidade de overload por coerções;
+  * bounds, substituição e inferência genérica além do subconjunto inicial;
+  * modelos canônicos de `Optional` e `Result`;
+  * dump tipado formal.
+* Próximo stage planejado:
+
+```text
+Stage 5 — Modelo de objetos
+```
+
+---
+
 ## 2026-08-03 — Consolidação documental do Stage 3
 
 ### Adicionado

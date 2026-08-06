@@ -12,7 +12,7 @@ The language does not adapt Rust's ownership model to traditional object-oriente
 
 ## Repository Status
 
-Capi is currently past **Stage 3 - HIR and name resolution** for the official implementation.
+Capi is currently past **Stage 4 - Type system** for the official implementation.
 
 The repository contains the language specification, implementation specification, architecture decisions, engineering documentation, planning records, and the Rust workspace for the official implementation.
 
@@ -26,7 +26,8 @@ There is a `capic` executable in `capi-lang/`. It currently supports:
 - basic internal-error handling;
 - Stage 1 token dumps;
 - Stage 2 AST dumps;
-- Stage 3 resolved HIR dumps.
+- Stage 3 resolved HIR dumps;
+- Stage 4 semantic type checks.
 
 Current demonstrable commands:
 
@@ -34,6 +35,7 @@ Current demonstrable commands:
 capic --emit tokens arquivo.capi
 capic --emit ast arquivo.capi
 capic --emit hir arquivo.capi
+capic check arquivo.capi
 ```
 
 It does not compile Capi programs yet.
@@ -41,7 +43,7 @@ It does not compile Capi programs yet.
 The next planned stage is:
 
 ```text
-Stage 4 - Type system
+Stage 5 - Object model
 ```
 
 ## Current Phase
@@ -100,6 +102,21 @@ Stage 3 delivered:
 - deterministic initial and resolved HIR dumps;
 - resolved HIR dump support through `capic --emit hir`.
 
+**Stage 4 - Type System** is complete.
+
+Stage 4 delivered:
+
+- internal type representation for the initial subset;
+- type interning and canonical type identity;
+- deterministic initial type inference;
+- type checking for values, expressions, assignments, calls, returns, and declarations in the initial subset;
+- initial subtype rules and explicit coercions;
+- applicable call and overload resolution for the supported subset;
+- initial generic type support;
+- structured type diagnostics with `TYPE` codes;
+- semantic test coverage for the implementable Stage 4 cases;
+- semantic check support through `capic check`.
+
 The formal progress record is:
 
 - [`FEATURE-STATUS.md`](capi-docs/docs/engineering/planning/FEATURE-STATUS.md)
@@ -142,7 +159,7 @@ Important entry points:
 - [`Language specification`](capi-docs/docs/specification/language/) - documents `00` to `12`.
 - [`Implementation specification`](capi-docs/docs/specification/implementation/) - documents `13` to `28`.
 - [`Engineering documentation`](capi-docs/docs/engineering/) - architecture, build, testing, development, planning, and compiler docs.
-- [`Compiler engineering`](capi-docs/docs/engineering/compiler/README.md) - compiler source, diagnostics, lexer, parser, AST, HIR, and initial semantics.
+- [`Compiler engineering`](capi-docs/docs/engineering/compiler/README.md) - compiler source, diagnostics, lexer, parser, AST, HIR, name resolution, and the initial type system.
 - [`Testing engineering`](capi-docs/docs/engineering/testing/README.md) - testing strategy, lexer tests, parser tests, and semantic tests.
 - [`Planning`](capi-docs/docs/engineering/planning/README.md) - definition of done, feature status, implementation order, milestones, roadmap, risks, and technical debt.
 - [`ADRs`](capi-docs/docs/adr/) - architecture decision records.
@@ -168,7 +185,7 @@ The current workspace crates are:
 - `capi-parser` - parser, syntax diagnostics, recovery, and AST construction;
 - `capi-hir` - high-level intermediate representation model and deterministic HIR dump;
 - `capi-lowering` - AST-to-HIR lowering;
-- `capi-sema` - scope graph, symbol table, and initial name resolution.
+- `capi-sema` - scope graph, symbol table, name resolution, type inference, type checking, subtyping, coercions, call resolution, overload applicability, initial generics, and type diagnostics.
 
 The workspace currently has no external Rust crate dependencies. The dependency policy is recorded in [`capi-lang/DEPENDENCIES.md`](capi-lang/DEPENDENCIES.md).
 
@@ -207,17 +224,17 @@ At this point, the repository has:
 - a complete language specification set from documents `00` to `12`;
 - an implementation specification set from documents `13` to `28`;
 - approved Stage 0 ADRs for core implementation decisions;
-- approved engineering documents for Stages 0, 1, 2, and 3;
+- approved engineering documents for Stages 0, 1, 2, 3, and 4;
 - documentation indexes for `capi-docs`, `docs`, ADRs, engineering, compiler, architecture, build/CI, development, testing, and planning;
 - planning records for feature status, implementation order, milestones, roadmap, risks, and technical debt;
 - a `capi-docs` changelog;
 - a Rust Cargo workspace in `capi-lang`;
 - the fundamental compiler crates plus source, diagnostics, lexer, AST, parser, HIR, lowering, and semantic crates;
-- a `capic` executable with token, AST, and resolved HIR dump support;
+- a `capic` executable with token, AST, resolved HIR dump support, and semantic type checks;
 - local validation scripts and CI workflow configuration;
 - lexer fixtures and snapshot tests;
 - parser integration tests and AST dump golden snapshots;
-- lowering tests, semantic integration tests, semantic fixtures, and HIR snapshots.
+- lowering tests, semantic integration tests, semantic fixtures, HIR snapshots, and Stage 4 type-system tests.
 
 The current local validation set includes:
 
@@ -232,6 +249,7 @@ cargo run -p capi-cli --locked -- --version
 cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic --locked -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 cargo run -p capi-cli --locked -- --emit hir tests/semantic/pass/basic.cap
+cargo run -p capi-cli --bin capic --locked -- check tests/semantic/pass/basic.cap
 scripts/check.sh
 ```
 
@@ -242,7 +260,7 @@ The CI workflow is versioned at [`.github/workflows/capi-lang-ci.yml`](.github/w
 The repository does not yet provide:
 
 - a compiler capable of compiling Capi programs;
-- type checking;
+- complete type checking beyond the Stage 4 initial subset;
 - ownership and domain analysis;
 - MIR;
 - code generation;
@@ -254,21 +272,21 @@ The repository does not yet provide:
 
 ## Near-Term Roadmap
 
-The immediate next step is **Stage 4 - Type system**.
+The immediate next step is **Stage 5 - Object model**.
 
-Stage 4 should start with the required type-system documents and then implement:
+Stage 5 should start from the object-model documents and then implement:
 
-- the internal type model;
-- type interning and canonicalization;
-- initial type inference;
-- type checking for the initial subset;
-- initial subtype and coercion rules;
-- structured type diagnostics.
+- class and object model lowering beyond the current subset;
+- object identity representation;
+- fields, methods, and constructors;
+- object layout rules;
+- initialization validation;
+- integration between object typing and the Stage 4 type checker.
 
 The most recent demonstrable command is:
 
 ```bash
-capic --emit hir arquivo.capi
+capic check arquivo.capi
 ```
 
 ## Project Note

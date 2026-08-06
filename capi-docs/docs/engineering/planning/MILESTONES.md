@@ -23,9 +23,9 @@ reproduzível.
 ## 2. Estado Atual
 
 ```text
-Último milestone concluído: M3 — HIR e nomes resolvidos
-Stage correspondente: Stage 3 — HIR e resolução de nomes
-Próximo milestone planejado: M4 — Checagem semântica inicial
+Último milestone concluído: M4 — Checagem semântica inicial
+Stage correspondente: Stage 4 — Sistema de tipos
+Próximo milestone planejado: M5 — Objetos semanticamente validados
 ```
 
 ---
@@ -38,7 +38,7 @@ Próximo milestone planejado: M4 — Checagem semântica inicial
 | M1 — Tokens e diagnósticos léxicos | Stage 1 | Concluído | `capic --emit tokens arquivo.capi` |
 | M2 — AST sintática inicial | Stage 2 | Concluído | `capic --emit ast arquivo.capi` |
 | M3 — HIR e nomes resolvidos | Stage 3 | Concluído | `capic --emit hir arquivo.capi` |
-| M4 — Checagem semântica inicial | Stage 4 | Planejado | `capic check arquivo.capi` |
+| M4 — Checagem semântica inicial | Stage 4 | Concluído | `capic check arquivo.capi` |
 | M5 — Objetos semanticamente validados | Stage 5 | Planejado | Hierarquias, overrides e identidade validados |
 | M6 — Segurança de memória inicial | Stage 6 | Planejado | Moves, borrows, regiões e escapes validados |
 | M7 — Domains operacionais | Stage 7 | Planejado | Domains criados, associados e descartados deterministicamente |
@@ -131,19 +131,52 @@ Documentos preenchidos para o milestone:
 
 ---
 
+### M4 — Checagem semântica inicial
+
+Status: Concluído.
+
+Evidências:
+
+- tipos internos implementados;
+- interning de tipos implementado;
+- inferência e verificação de tipos implementadas para o subconjunto inicial;
+- subtipagem nominal inicial implementada;
+- coerções de upcast registradas;
+- chamadas simples resolvidas;
+- generics iniciais por aridade, instanciação e invariância implementados;
+- diagnósticos de tipo estruturados implementados;
+- `capic check arquivo.capi` validado.
+
+Evidência validada:
+
+```bash
+capic check arquivo.capi
+```
+
+Documentos preenchidos para o milestone:
+
+- `compiler/semantic/TYPE-MODEL.md`;
+- `compiler/semantic/TYPE-INTERNING.md`;
+- `compiler/semantic/TYPE-INFERENCE.md`;
+- `compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
+- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`;
+- `compiler/semantic/GENERICS-IMPLEMENTATION.md`;
+- `testing/SEMANTIC-TESTS.md`.
+
+---
+
 ## 5. Próximo Milestone
 
-### M4 — Checagem semântica inicial
+### M5 — Objetos semanticamente validados
 
 Status: Planejado.
 
 Objetivo:
 
-- implementar modelo interno de tipos;
-- implementar inferência e verificação inicial;
-- validar coerções e regras de tipo do subconjunto inicial;
-- integrar diagnósticos de tipo ao pipeline;
-- expor checagem semântica por CLI.
+- completar validação semântica de classes e objetos;
+- validar identidade, herança, overrides e membros;
+- preparar regras de layout e despacho;
+- conectar o modelo de objetos às estruturas de tipo já implementadas.
 
 Evidência esperada:
 

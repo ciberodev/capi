@@ -12,7 +12,7 @@ A linguagem não adapta o modelo de ownership do Rust à programação orientada
 
 ## Estado do Repositório
 
-Capi está atualmente após o **Stage 3 - HIR e resolução de nomes** da implementação oficial.
+Capi está atualmente após o **Stage 4 - Sistema de tipos** da implementação oficial.
 
 O repositório contém a especificação da linguagem, a especificação da implementação, decisões arquiteturais, documentação de engenharia, registros de planejamento e o workspace Rust da implementação oficial.
 
@@ -26,7 +26,8 @@ Existe um executável `capic` em `capi-lang/`. Atualmente ele suporta:
 - tratamento básico de erros internos;
 - dumps de tokens do Stage 1;
 - dumps de AST do Stage 2;
-- dumps de HIR resolvida do Stage 3.
+- dumps de HIR resolvida do Stage 3;
+- checagens semânticas de tipos do Stage 4.
 
 Comandos demonstráveis atuais:
 
@@ -34,6 +35,7 @@ Comandos demonstráveis atuais:
 capic --emit tokens arquivo.capi
 capic --emit ast arquivo.capi
 capic --emit hir arquivo.capi
+capic check arquivo.capi
 ```
 
 Ele ainda não compila programas Capi.
@@ -41,7 +43,7 @@ Ele ainda não compila programas Capi.
 O próximo stage planejado é:
 
 ```text
-Stage 4 - Sistema de tipos
+Stage 5 - Modelo de objetos
 ```
 
 ## Fase Atual
@@ -100,6 +102,21 @@ O Stage 3 entregou:
 - dumps determinísticos de HIR inicial e HIR resolvida;
 - suporte a dump de HIR resolvida por meio de `capic --emit hir`.
 
+O **Stage 4 - Sistema de Tipos** está concluído.
+
+O Stage 4 entregou:
+
+- representação interna de tipos para o subconjunto inicial;
+- interning de tipos e identidade canônica de tipos;
+- inferência inicial de tipos determinística;
+- checagem de tipos para valores, expressões, atribuições, chamadas, retornos e declarações do subconjunto inicial;
+- regras iniciais de subtipagem e coerções explícitas;
+- resolução de chamadas e overload aplicável para o subconjunto suportado;
+- suporte inicial a tipos genéricos;
+- diagnósticos estruturados de tipo com códigos `TYPE`;
+- cobertura de testes semânticos para os casos implementáveis do Stage 4;
+- suporte a checagem semântica por meio de `capic check`.
+
 O registro formal de progresso é:
 
 - [`FEATURE-STATUS.md`](capi-docs/docs/engineering/planning/FEATURE-STATUS.md)
@@ -142,7 +159,7 @@ Pontos de entrada importantes:
 - [`Especificação da linguagem`](capi-docs/docs/specification/language/) - documentos `00` a `12`.
 - [`Especificação de implementação`](capi-docs/docs/specification/implementation/) - documentos `13` a `28`.
 - [`Documentação de engenharia`](capi-docs/docs/engineering/) - arquitetura, build, testes, desenvolvimento, planejamento e documentação do compilador.
-- [`Engenharia do compilador`](capi-docs/docs/engineering/compiler/README.md) - fontes, diagnósticos, lexer, parser, AST, HIR e semântica inicial.
+- [`Engenharia do compilador`](capi-docs/docs/engineering/compiler/README.md) - fontes, diagnósticos, lexer, parser, AST, HIR, resolução de nomes e sistema de tipos inicial.
 - [`Engenharia de testes`](capi-docs/docs/engineering/testing/README.md) - estratégia de testes, testes do lexer, testes do parser e testes semânticos.
 - [`Planejamento`](capi-docs/docs/engineering/planning/README.md) - definição de pronto, status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica.
 - [`ADRs`](capi-docs/docs/adr/) - registros de decisões arquiteturais.
@@ -168,7 +185,7 @@ Os crates atuais do workspace são:
 - `capi-parser` - parser, diagnósticos sintáticos, recuperação e construção da AST;
 - `capi-hir` - modelo de representação semântica de alto nível e dump determinístico da HIR;
 - `capi-lowering` - lowering de AST para HIR;
-- `capi-sema` - grafo de escopos, tabela de símbolos e resolução inicial de nomes.
+- `capi-sema` - grafo de escopos, tabela de símbolos, resolução de nomes, inferência de tipos, checagem de tipos, subtipagem, coerções, resolução de chamadas, aplicabilidade de overload, generics iniciais e diagnósticos de tipo.
 
 O workspace atualmente não possui dependências externas de crates Rust. A política de dependências está registrada em [`capi-lang/DEPENDENCIES.md`](capi-lang/DEPENDENCIES.md).
 
@@ -207,17 +224,17 @@ Neste momento, o repositório possui:
 - um conjunto completo de especificação da linguagem, dos documentos `00` a `12`;
 - um conjunto de especificação de implementação, dos documentos `13` a `28`;
 - ADRs aprovadas do Stage 0 para decisões centrais de implementação;
-- documentos de engenharia aprovados para os Stages 0, 1, 2 e 3;
+- documentos de engenharia aprovados para os Stages 0, 1, 2, 3 e 4;
 - índices de documentação para `capi-docs`, `docs`, ADRs, engenharia, compilador, arquitetura, build/CI, desenvolvimento, testes e planejamento;
 - registros de planejamento para status de features, ordem de implementação, milestones, roadmap, riscos e dívida técnica;
 - um changelog de `capi-docs`;
 - um workspace Cargo Rust em `capi-lang`;
 - os crates fundamentais do compilador mais os crates de fontes, diagnósticos, lexer, AST, parser, HIR, lowering e semântica;
-- um executável `capic` com suporte a dump de tokens, AST e HIR resolvida;
+- um executável `capic` com suporte a dump de tokens, AST, HIR resolvida e checagens semânticas de tipos;
 - scripts de validação local e configuração de workflow de CI;
 - fixtures do lexer e testes de snapshot;
 - testes de integração do parser e snapshots golden de dump da AST;
-- testes de lowering, testes de integração semântica, fixtures semânticas e snapshots de HIR.
+- testes de lowering, testes de integração semântica, fixtures semânticas, snapshots de HIR e testes do sistema de tipos do Stage 4.
 
 O conjunto atual de validação local inclui:
 
@@ -232,6 +249,7 @@ cargo run -p capi-cli --locked -- --version
 cargo run -p capi-cli --locked -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic --locked -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 cargo run -p capi-cli --locked -- --emit hir tests/semantic/pass/basic.cap
+cargo run -p capi-cli --bin capic --locked -- check tests/semantic/pass/basic.cap
 scripts/check.sh
 ```
 
@@ -242,7 +260,7 @@ O workflow de CI está versionado em [`.github/workflows/capi-lang-ci.yml`](.git
 O repositório ainda não fornece:
 
 - um compilador capaz de compilar programas Capi;
-- checagem de tipos;
+- checagem de tipos completa além do subconjunto inicial do Stage 4;
 - análise de ownership e domains;
 - MIR;
 - geração de código;
@@ -254,21 +272,21 @@ O repositório ainda não fornece:
 
 ## Roadmap Imediato
 
-O próximo passo imediato é o **Stage 4 - Sistema de tipos**.
+O próximo passo imediato é o **Stage 5 - Modelo de objetos**.
 
-O Stage 4 deve começar pelos documentos obrigatórios do sistema de tipos e depois implementar:
+O Stage 5 deve partir dos documentos de modelo de objetos e depois implementar:
 
-- modelo interno de tipos;
-- interning e canonicalização de tipos;
-- inferência inicial de tipos;
-- checagem de tipos para o subconjunto inicial;
-- regras iniciais de subtipagem e coerções;
-- diagnósticos estruturados de tipo.
+- lowering do modelo de classes e objetos além do subconjunto atual;
+- representação de identidade de objetos;
+- campos, métodos e construtores;
+- regras de layout de objetos;
+- validação de inicialização;
+- integração entre tipagem de objetos e o checker de tipos do Stage 4.
 
 O comando demonstrável mais recente é:
 
 ```bash
-capic --emit hir arquivo.capi
+capic check arquivo.capi
 ```
 
 ## Nota do Projeto

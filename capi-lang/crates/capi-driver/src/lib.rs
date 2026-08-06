@@ -8,7 +8,7 @@ use capi_diagnostics::{Diagnostic, DiagnosticBag, DiagnosticCode, DiagnosticRend
 use capi_lexer::{lex, Token, TokenKind};
 use capi_lowering::lower_ast;
 use capi_parser::parse;
-use capi_sema::{analyze_names, dump_resolved_hir};
+use capi_sema::{analyze_names, check_types, dump_resolved_hir};
 use capi_session::{CompilationSession, SessionOptions};
 use capi_source::SourceMap;
 
@@ -31,6 +31,8 @@ pub enum DriverRequest {
     EmitAst { path: PathBuf },
     /// Emit HIR for a source file.
     EmitHir { path: PathBuf },
+    /// Run semantic type checking for a source file.
+    CheckTypes { path: PathBuf },
 }
 
 /// Structured response produced by the driver.
@@ -124,6 +126,7 @@ pub fn run(request: DriverRequest) -> DriverResponse {
         DriverRequest::EmitTokens { path } => emit_tokens(path),
         DriverRequest::EmitAst { path } => emit_ast(path),
         DriverRequest::EmitHir { path } => emit_hir(path),
+        DriverRequest::CheckTypes { path } => check_file(path),
     }
 }
 
@@ -133,7 +136,67 @@ pub fn initialize_session() -> CompilationSession {
 }
 
 fn help_text() -> &'static str {
-    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic arquivo.capi\n"
+    "capic - Capi compiler\n\nUsage:\n  capic --help\n  capic --version\n  capic --emit tokens arquivo.capi\n  capic --emit ast arquivo.capi\n  capic --emit hir arquivo.capi\n  capic check arquivo.capi\n  capic arquivo.capi\n"
+}
+
+fn check_file(path: PathBuf) -> DriverResponse {
+    let mut session = initialize_session();
+    let source = match session.sources_mut().load_file(&path) {
+        Ok(source) => source,
+        Err(error) => {
+            let diagnostic =
+                Diagnostic::error(error.to_string()).with_code(DiagnosticCode::source(1));
+            session.diagnostics_mut().push(diagnostic);
+            return DriverResponse::failure(format!("error: {error}\n"));
+        }
+    };
+
+    let Some(file) = session.sources().get(source) else {
+        return DriverResponse::internal_error(
+            "internal compiler error: loaded source is missing\n",
+        );
+    };
+    let output = lex(source, file.text());
+    let (tokens, diagnostics) = output.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+    if session.diagnostics().has_errors() || session.diagnostics().has_internal_errors() {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return DriverResponse::failure(stderr);
+    }
+
+    let parsed = parse(source, &tokens, session.sources());
+    let (ast, diagnostics) = parsed.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+    if session.diagnostics().has_errors() || session.diagnostics().has_internal_errors() {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return DriverResponse::failure(stderr);
+    }
+
+    let lowered = lower_ast(&ast, session.sources());
+    let (hir, _ast_to_hir, diagnostics, blocked) = lowered.into_parts();
+    session.diagnostics_mut().extend(diagnostics);
+    let Some(hir) = hir else {
+        let stderr = render_diagnostics(session.diagnostics(), session.sources());
+        return if blocked || session.diagnostics().has_errors() {
+            DriverResponse::failure(stderr)
+        } else {
+            DriverResponse::internal_error("internal compiler error: HIR was not produced\n")
+        };
+    };
+
+    let checked = check_types(&hir);
+    session
+        .diagnostics_mut()
+        .extend(checked.diagnostics().iter().cloned());
+    let stderr = render_diagnostics(session.diagnostics(), session.sources());
+
+    if session.diagnostics().has_internal_errors() {
+        DriverResponse::internal_error(stderr)
+    } else if session.diagnostics().has_errors() {
+        DriverResponse::failure(stderr)
+    } else {
+        DriverResponse::success(String::new())
+    }
 }
 
 fn emit_tokens(path: PathBuf) -> DriverResponse {

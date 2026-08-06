@@ -31,8 +31,8 @@ Este documento não substitui o Documento 28. Quando houver conflito, prevalecem
 ## 2. Estado Atual
 
 ```text
-Último stage concluído: Stage 3 — HIR e resolução de nomes
-Próximo stage planejado: Stage 4 — Sistema de tipos
+Último stage concluído: Stage 4 — Sistema de tipos
+Próximo stage planejado: Stage 5 — Modelo de objetos
 Registro de progresso: FEATURE-STATUS.md
 ```
 
@@ -41,11 +41,12 @@ Stages concluídos:
 - Stage 0 — Fundação do projeto;
 - Stage 1 — Fontes, diagnósticos e lexer;
 - Stage 2 — Parser e AST;
-- Stage 3 — HIR e resolução de nomes.
+- Stage 3 — HIR e resolução de nomes;
+- Stage 4 — Sistema de tipos.
 
 Stages planejados:
 
-- Stage 4 a Stage 19.
+- Stage 5 a Stage 19.
 
 ---
 
@@ -83,7 +84,7 @@ Um stage só deve ser marcado como concluído quando os critérios aplicáveis e
 | 1 | Fontes, diagnósticos e lexer | Concluído | Ler fontes, mapear spans, emitir diagnósticos e tokens. | `capic --emit tokens arquivo.capi` |
 | 2 | Parser e AST | Concluído | Transformar tokens em AST com spans, diagnósticos e recuperação. | `capic --emit ast arquivo.capi` |
 | 3 | HIR e resolução de nomes | Concluído | Baixar AST para HIR e resolver símbolos, módulos, imports e escopos. | `capic --emit hir arquivo.capi` |
-| 4 | Sistema de tipos | Planejado | Implementar tipos internos, inferência, verificação, coerções e generics. | `capic check arquivo.capi` |
+| 4 | Sistema de tipos | Concluído | Implementar tipos internos, inferência, verificação, coerções e generics. | `capic check arquivo.capi` |
 | 5 | Modelo de objetos | Planejado | Implementar classes, identidade, herança, override, layout e despacho. | Checagem válida de hierarquias e objetos |
 | 6 | Ownership, borrowing e regiões | Planejado | Implementar regras fundamentais de segurança de memória. | Rejeição de moves, borrows e escapes inválidos |
 | 7 | Domains | Planejado | Implementar semântica de Domains, associação e descarte determinístico. | Diagnósticos e validação de Domains |
@@ -218,7 +219,7 @@ capic --emit hir arquivo.capi
 
 ### Stage 4 — Sistema de tipos
 
-Status: Planejado.
+Status: Concluído.
 
 Objetivo:
 
@@ -230,13 +231,16 @@ Objetivo:
 Entregas principais:
 
 - tipos internos;
+- interning de tipos;
 - inferência;
 - checagem de tipos;
 - coerções;
 - resolução de chamadas;
-- diagnósticos de tipo.
+- generics iniciais;
+- diagnósticos de tipo;
+- `capic check`.
 
-Resultado esperado:
+Resultado demonstrável:
 
 ```bash
 capic check arquivo.capi
@@ -248,8 +252,9 @@ Status: Planejado.
 
 Objetivo:
 
-- implementar classes, identidade, herança e subtipagem nominal;
-- preparar layout, vtables e despacho dinâmico.
+- implementar classes, identidade, herança, overrides e validação completa de objetos;
+- preparar layout, vtables e despacho dinâmico;
+- completar a integração de `ObjectId<T>` público com o sistema de tipos.
 
 Entregas principais:
 
@@ -537,20 +542,21 @@ Entregas principais:
 
 ## 6. Próxima Ação Operacional
 
-Com o Stage 3 concluído, a próxima ação operacional é iniciar o Stage 4:
+Com o Stage 4 concluído, a próxima ação operacional é iniciar o Stage 5:
 
 ```text
-Stage 4 — Sistema de tipos
+Stage 5 — Modelo de objetos
 ```
 
-Antes da implementação, devem ser preenchidos ou revisados os documentos
-obrigatórios do Stage 4:
+Antes da implementação, devem ser preenchidos ou revisados os contratos
+obrigatórios do Stage 5, com atenção especial para:
 
-- `compiler/semantic/TYPE-MODEL.md`;
-- `compiler/semantic/TYPE-INFERENCE.md`;
-- `compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
-- `compiler/semantic/TYPE-INTERNING.md`;
-- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`.
+- modelo semântico de objetos;
+- identidade lógica e `ObjectId<T>`;
+- validação de hierarquias;
+- overrides;
+- layout e despacho;
+- integração com o sistema de tipos já implementado.
 
 ---
 

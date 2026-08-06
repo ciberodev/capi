@@ -10,6 +10,8 @@ fonte usados pelo frontend inicial. A partir do Stage 2, também documenta os
 testes obrigatórios do parser, da AST, da recuperação sintática e do dump de
 AST. A partir do Stage 3, documenta os testes de lowering AST-HIR, HIR, escopos,
 símbolos, resolução de nomes, diagnósticos semânticos e `capic --emit hir`.
+A partir do Stage 4, também documenta testes do sistema de tipos, inferência,
+type checking, subtipagem, coerções, generics e `capic check`.
 
 ---
 
@@ -20,7 +22,7 @@ símbolos, resolução de nomes, diagnósticos semânticos e `capic --emit hir`.
 | `TEST-STRATEGY.md` | Aprovado | Documento de engenharia bloqueante | Define a estratégia oficial de testes, comandos de validação, camadas de teste, suíte mínima do Stage 0, critérios de CI e evolução da suíte nos próximos stages. |
 | `LEXER-TESTS.md` | Aprovado | Documento de testes do Stage 1 | Define cobertura obrigatória para `SourceMap`, spans, Unicode, tokenização, diagnósticos léxicos, entradas inválidas, snapshots e `capic --emit tokens`. |
 | `PARSER-TESTS.md` | Aprovado | Documento de testes do Stage 2 | Define cobertura obrigatória para parser, AST, precedência, tipos, classes, diagnósticos sintáticos, recuperação, spans, snapshots e `capic --emit ast`. |
-| `SEMANTIC-TESTS.md` | Aprovado | Documento de testes do Stage 3 | Define cobertura obrigatória para lowering, HIR, escopos, símbolos, resolução de nomes, diagnósticos semânticos, snapshots e `capic --emit hir`. |
+| `SEMANTIC-TESTS.md` | Aprovado | Documento de testes dos Stages 3 e 4 | Define cobertura obrigatória para lowering, HIR, escopos, símbolos, resolução de nomes, sistema de tipos, inferência, type checking, subtipagem, coerções, generics, diagnósticos semânticos, snapshots, `capic --emit hir` e `capic check`. |
 
 ---
 
@@ -132,6 +134,29 @@ O mínimo demonstrável inclui:
 * snapshots de HIR inicial e HIR resolvida;
 * teste de CLI para `capic --emit hir arquivo.capi`.
 
+### Stage 4
+
+No Stage 4, a suíte passa a validar o sistema de tipos do subconjunto inicial.
+
+O mínimo demonstrável inclui:
+
+* testes de modelo interno de tipos;
+* testes de `TypeId`, built-ins, propriedades e origem de tipos;
+* testes de interning e canonicalização;
+* testes de inferência de locais, literais, tuples, arrays, chamadas e retornos;
+* testes de type checking para locais, atribuições, retornos, condições,
+  argumentos e chamadas;
+* testes de estados `Checked`, `CheckedWithErrors` e `Blocked`;
+* testes de registro de chamadas resolvidas;
+* testes de registro de coerções;
+* testes de subtipagem nominal por reflexividade, herança, herança transitiva e
+  interfaces;
+* testes de rejeição de downcast implícito e coerções proibidas do subconjunto;
+* testes de generics por aridade, instanciação, duplicidade e invariância;
+* testes de diagnósticos de tipo estruturados `TYPE`;
+* testes de determinismo de diagnósticos, interning e tabelas de tipo;
+* testes de CLI para `capic check arquivo.capi`.
+
 ---
 
 ## Comandos canônicos de validação
@@ -147,10 +172,13 @@ cargo run -p capi-cli -- --version
 cargo run -p capi-cli -- --emit tokens tests/lexer/pass/basic.cap
 cargo run -p capi-cli --bin capic -- --emit ast crates/capi-parser/tests/fixtures/ast_dump/basic.cap
 cargo run -p capi-cli -- --emit hir tests/semantic/pass/basic.cap
+cargo run -p capi-cli -- check /tmp/stage4-ok.cap
 ```
 
-Esses comandos são a base de validação usada para considerar os Stages 1, 2 e 3
-concluídos localmente.
+Esses comandos são a base de validação usada para considerar os Stages 1, 2, 3
+e 4 concluídos localmente. O arquivo `/tmp/stage4-ok.cap` deve conter um
+programa válido do subconjunto inicial quando o smoke test manual de Stage 4 for
+executado.
 
 A validação consolidada do workspace é:
 
@@ -218,15 +246,16 @@ intencional no contrato textual da AST.
 
 ## Organização dos testes semânticos
 
-Os testes de HIR, lowering e análise semântica inicial usam cinco camadas:
+Os testes de HIR, lowering, resolução e sistema de tipos usam seis camadas:
 
 | Camada | Local | Finalidade |
 | --- | --- | --- |
 | Lowering | `capi-lang/crates/capi-lowering/tests/lowering_tests.rs` | Validar `SourceMap -> Lexer -> Parser -> AST -> HIR`, IDs HIR, spans, `AstToHirMap` e bloqueio por AST inválida. |
-| Integração semântica | `capi-lang/crates/capi-sema/tests/semantic_tests.rs` | Validar escopos, símbolos, resolução, diagnósticos e dumps resolvidos. |
+| Integração semântica | `capi-lang/crates/capi-sema/tests/semantic_tests.rs` | Validar escopos, símbolos, resolução, tipos, inferência, type checking, subtipagem, coerções, generics, diagnósticos e dumps resolvidos. |
 | Fixtures pass/fail | `capi-lang/tests/semantic/pass/` e `capi-lang/tests/semantic/fail/` | Validar programas aceitos e rejeitados pelo subconjunto semântico inicial. |
 | Snapshots | `capi-lang/tests/semantic/snapshots/` | Validar saída determinística de HIR inicial e HIR resolvida. |
-| CLI/driver | `capi-lang/crates/capi-cli/tests/` e `capi-lang/crates/capi-driver/src/lib.rs` | Validar comportamento observável de `capic --emit hir`. |
+| Type checking CLI | `capi-lang/crates/capi-cli/tests/` e `capi-lang/crates/capi-driver/src/lib.rs` | Validar comportamento observável de `capic check`. |
+| HIR CLI/driver | `capi-lang/crates/capi-cli/tests/` e `capi-lang/crates/capi-driver/src/lib.rs` | Validar comportamento observável de `capic --emit hir`. |
 
 Os dados de teste ficam em:
 
@@ -244,6 +273,11 @@ Testes semânticos devem consumir HIR por `capi-hir` e executar o lowering por
 `capi-lowering`. A HIR não deve depender diretamente da estrutura da AST após o
 lowering.
 
+Testes de Stage 4 devem validar as tabelas públicas de `check_types`, incluindo
+interner, `TypeTable`, `CoercionTable`, `CallResolutionTable`, estado final e
+diagnósticos agregados. Programas válidos devem chegar a `Checked`; programas
+inválidos devem chegar a `CheckedWithErrors` ou `Blocked`, conforme a causa.
+
 ---
 
 ## Evolução da suíte
@@ -256,7 +290,7 @@ Ordem esperada de amadurecimento:
 2. testes de fontes, sessão e diagnósticos;
 3. testes de lexer;
 4. testes de parser;
-5. testes semânticos;
+5. testes semânticos e de tipos;
 6. testes de MIR;
 7. testes de geração de código;
 8. testes `compile-pass`, `compile-fail` e `run-pass`;
@@ -289,6 +323,12 @@ Documentos relacionados:
 ../compiler/semantic/SCOPE-MODEL.md
 ../compiler/semantic/SYMBOL-MODEL.md
 ../compiler/semantic/NAME-RESOLUTION.md
+../compiler/semantic/TYPE-MODEL.md
+../compiler/semantic/TYPE-INTERNING.md
+../compiler/semantic/TYPE-INFERENCE.md
+../compiler/semantic/TYPE-CHECKING-PIPELINE.md
+../compiler/semantic/SUBTYPING-AND-COERCIONS.md
+../compiler/semantic/GENERICS-IMPLEMENTATION.md
 ../compiler/source/SOURCE-MAP.md
 ../compiler/source/SPANS-AND-LOCATIONS.md
 ../planning/DEFINITION-OF-DONE.md
@@ -320,14 +360,20 @@ Para entender a estratégia de testes, leia nesta ordem:
 14. `../compiler/semantic/SCOPE-MODEL.md`
 15. `../compiler/semantic/SYMBOL-MODEL.md`
 16. `../compiler/semantic/NAME-RESOLUTION.md`
-17. `../build-and-ci/BUILD-SYSTEM.md`
-18. `../planning/DEFINITION-OF-DONE.md`
-19. `../architecture/COMPILATION-PIPELINE.md`
-20. `../architecture/COMPILER-ARCHITECTURE.md`
+17. `../compiler/semantic/TYPE-MODEL.md`
+18. `../compiler/semantic/TYPE-INTERNING.md`
+19. `../compiler/semantic/TYPE-INFERENCE.md`
+20. `../compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+21. `../compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+22. `../compiler/semantic/GENERICS-IMPLEMENTATION.md`
+23. `../build-and-ci/BUILD-SYSTEM.md`
+24. `../planning/DEFINITION-OF-DONE.md`
+25. `../architecture/COMPILATION-PIPELINE.md`
+26. `../architecture/COMPILER-ARCHITECTURE.md`
 
 Essa ordem parte da política geral, passa pelas suítes léxica e sintática dos
-Stages 1 e 2, entra na suíte semântica do Stage 3 e depois conecta a validação
-ao compilador, ao build, aos critérios de aceite e à arquitetura.
+Stages 1 e 2, entra na suíte semântica dos Stages 3 e 4 e depois conecta a
+validação ao compilador, ao build, aos critérios de aceite e à arquitetura.
 
 ---
 

@@ -23,8 +23,8 @@ normativa do Documento 28 e não redefine critérios de conclusão.
 
 ```text
 Horizonte atual: Semântica inicial em andamento
-Último stage concluído: Stage 3 — HIR e resolução de nomes
-Próximo foco: Stage 4 — Sistema de tipos
+Último stage concluído: Stage 4 — Sistema de tipos
+Próximo foco: Stage 5 — Modelo de objetos
 ```
 
 ---
@@ -98,7 +98,7 @@ Status: Em andamento.
 Stages:
 
 - Stage 3 — HIR e resolução de nomes concluído;
-- Stage 4 — Sistema de tipos;
+- Stage 4 — Sistema de tipos concluído;
 - Stage 5 — Modelo de objetos.
 
 Resultados:
@@ -106,9 +106,10 @@ Resultados:
 - HIR determinística concluída;
 - símbolos e escopos concluídos para o subconjunto inicial;
 - resolução de nomes concluída para o subconjunto inicial;
-- inferência e checagem de tipos;
-- generics iniciais;
-- classes e hierarquias validadas.
+- inferência e checagem de tipos concluídas para o subconjunto inicial;
+- generics iniciais concluídos para aridade, instanciação e invariância;
+- subtipagem nominal inicial concluída;
+- classes, objetos, overrides, layout e despacho serão aprofundados no Stage 5.
 
 Comandos esperados:
 
@@ -227,25 +228,27 @@ Resultados esperados:
 O próximo foco operacional é:
 
 ```text
-Stage 4 — Sistema de tipos
+Stage 5 — Modelo de objetos
 ```
 
-O Stage 3 entregou:
-
-- `compiler/frontend/AST-LOWERING.md`;
-- `compiler/semantic/HIR-MODEL.md`;
-- `compiler/semantic/SYMBOL-MODEL.md`;
-- `compiler/semantic/SCOPE-MODEL.md`;
-- `compiler/semantic/NAME-RESOLUTION.md`;
-- `testing/SEMANTIC-TESTS.md`.
-
-O próximo trabalho deve começar pelos contratos de tipos:
+O Stage 4 entregou:
 
 - `compiler/semantic/TYPE-MODEL.md`;
+- `compiler/semantic/TYPE-INTERNING.md`;
 - `compiler/semantic/TYPE-INFERENCE.md`;
 - `compiler/semantic/TYPE-CHECKING-PIPELINE.md`;
-- `compiler/semantic/TYPE-INTERNING.md`;
-- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`.
+- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`;
+- `compiler/semantic/GENERICS-IMPLEMENTATION.md`;
+- `testing/SEMANTIC-TESTS.md`.
+
+O próximo trabalho deve começar pelos contratos de objetos:
+
+- validação completa de classes e hierarquias;
+- identidade lógica e `ObjectId<T>` público;
+- overrides;
+- layout;
+- despacho estático e dinâmico;
+- integração com as regras de tipos já implementadas.
 
 ---
 

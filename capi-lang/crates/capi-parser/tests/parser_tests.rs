@@ -135,6 +135,46 @@ fn parses_unit_order_and_wildcard_imports() {
 }
 
 #[test]
+fn parses_module_only_unit_and_preserves_module_span() {
+    let parsed = parse_valid("module banco.contas;");
+    let root = parsed.output.ast().root();
+
+    assert!(root.module.is_some());
+    assert!(root.imports.is_empty());
+    assert!(root.declarations.is_empty());
+    assert_span(&parsed, root.span, "module banco.contas;");
+    assert_span(
+        &parsed,
+        root.module.as_ref().expect("module").span,
+        "module banco.contas;",
+    );
+    assert_span(
+        &parsed,
+        root.module.as_ref().expect("module").path.span,
+        "banco.contas",
+    );
+}
+
+#[test]
+fn preserves_import_order_and_spans() {
+    let parsed = parse_valid(
+        r#"
+        module banco;
+        import banco.Cliente;
+        import banco.*;
+        "#,
+    );
+    let root = parsed.output.ast().root();
+
+    assert_eq!(root.imports.len(), 2);
+    assert_eq!(root.imports[0].path.segments[1].text, "Cliente");
+    assert_eq!(root.imports[1].path.segments[0].text, "banco");
+    assert_span(&parsed, root.imports[0].span, "import banco.Cliente;");
+    assert_span(&parsed, root.imports[0].path.span, "banco.Cliente");
+    assert_span(&parsed, root.imports[1].span, "import banco.*;");
+}
+
+#[test]
 fn parses_declaration_prefixes_generics_and_global_items() {
     let parsed = parse_valid(
         r#"
@@ -513,6 +553,21 @@ fn parses_types() {
 }
 
 #[test]
+fn parses_array_type_without_size_when_allowed() {
+    let parsed = parse_valid("function f(values : Int32[]) {}");
+
+    let Decl::Function(function) = &parsed.output.ast().root().declarations[0] else {
+        panic!("expected function");
+    };
+    let Some(TypeSyntax::Array { size, span, .. }) = &function.params[0].ty else {
+        panic!("expected array type");
+    };
+
+    assert!(size.is_none());
+    assert_span(&parsed, *span, "Int32[]");
+}
+
+#[test]
 fn parses_interface_trait_and_member_signatures() {
     let parsed = parse_valid(
         r#"
@@ -614,12 +669,23 @@ fn reports_additional_negative_syntax_cases() {
     for (source, code) in [
         ("public", "PARSE0004"),
         ("@decorator()", "PARSE0004"),
+        ("function", "PARSE0002"),
         ("function main(a : Int32,, b : Int32) {}", "PARSE0002"),
+        ("function main(a : Int32 b : Int32) {}", "PARSE0007"),
         ("function main() :", "PARSE0002"),
+        ("function main(value :) {}", "PARSE0002"),
+        ("function main(value : List<) {}", "PARSE0002"),
+        ("function main(value : List<String) {}", "PARSE0002"),
+        ("function main(value : Map<String Cliente>) {}", "PARSE0007"),
+        ("function main(value : Int32[10) {}", "PARSE0002"),
         ("class C { constructor(a : Int32); }", "PARSE0004"),
         ("class C { field : Int32 }", "PARSE0002"),
+        ("class C { function () {} }", "PARSE0002"),
         ("function main() { call(,); }", "PARSE0006"),
         ("function main() { array[0; }", "PARSE0002"),
+        ("function main() { if (value { return; } }", "PARSE0002"),
+        ("function main() { return }", "PARSE0002"),
+        ("function main() { a + ; }", "PARSE0006"),
         ("function main() { match (x) { case : x; } }", "PARSE0001"),
     ] {
         let parsed = parse_text(source);
@@ -696,6 +762,25 @@ fn recovers_after_syntax_errors() {
     assert_eq!(body.statements.len(), 4);
     assert!(matches!(body.statements[1], Stmt::Let(_)));
     assert!(matches!(body.statements[3], Stmt::Return { .. }));
+}
+
+#[test]
+fn recovers_missing_function_body_and_continues_with_later_declaration() {
+    let parsed = parse_text(
+        r#"
+        function broken()
+        function ok() {}
+        "#,
+    );
+
+    assert!(!parsed.output.diagnostics().is_empty());
+    assert!(parsed
+        .output
+        .ast()
+        .root()
+        .declarations
+        .iter()
+        .any(|decl| matches!(decl, Decl::Function(function) if function.name.text == "ok")));
 }
 
 #[test]
@@ -824,6 +909,28 @@ fn preserves_spans_for_specific_ast_nodes() {
     };
     assert_span(&parsed, member.span, "(service).field");
     assert_span_after(&parsed, "(service).", member.member.span, "field");
+}
+
+#[test]
+fn preserves_spans_after_unicode_text() {
+    let source = "function main() { let texto = \"ç\"; let valor = 1; }";
+    let parsed = parse_valid(source);
+
+    let Decl::Function(function) = &parsed.output.ast().root().declarations[0] else {
+        panic!("expected function");
+    };
+    let body = function.body.as_ref().expect("function body");
+    let Stmt::Let(second) = &body.statements[1] else {
+        panic!("expected second let");
+    };
+
+    assert_span(&parsed, second.name.span, "valor");
+    assert_span_after(
+        &parsed,
+        "valor = ",
+        second.initializer.as_ref().unwrap().span(),
+        "1",
+    );
 }
 
 #[test]

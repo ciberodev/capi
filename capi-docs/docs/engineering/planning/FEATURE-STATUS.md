@@ -3,7 +3,7 @@
 **Projeto:** Linguagem Capi  
 **Documento:** FEATURE-STATUS  
 **Status:** Aprovado  
-**Stage:** Stages 0-3 — Fundação, frontend inicial e HIR/resolução de nomes  
+**Stage:** Stages 0-4 — Fundação, frontend inicial, HIR/resolução de nomes e tipos  
 **Natureza:** Registro de progresso  
 **Base normativa:** Documento 28 — Plano de Desenvolvimento da Implementação Oficial
 
@@ -706,3 +706,196 @@ O workspace Rust baixa AST para HIR, preserva rastreabilidade, cria IDs
 internos, registra símbolos, constrói escopos, resolve nomes do subconjunto
 inicial, emite diagnósticos semânticos estruturados, expõe HIR resolvida por
 CLI e passa todos os testes obrigatórios definidos para o stage.
+
+---
+
+## Stage 4 — Sistema de tipos
+
+```text
+Stage: Stage 4 — Sistema de tipos
+Responsável: Projeto Capi
+Data de início: 2026-08-06
+Data de conclusão: 2026-08-06
+Status: Concluído
+```
+
+### Documentos concluídos
+
+Documentos de semântica de tipos preenchidos:
+
+- `compiler/semantic/TYPE-MODEL.md`
+- `compiler/semantic/TYPE-INTERNING.md`
+- `compiler/semantic/TYPE-INFERENCE.md`
+- `compiler/semantic/TYPE-CHECKING-PIPELINE.md`
+- `compiler/semantic/SUBTYPING-AND-COERCIONS.md`
+- `compiler/semantic/GENERICS-IMPLEMENTATION.md`
+
+Documento de testes atualizado:
+
+- `testing/SEMANTIC-TESTS.md`
+
+READMEs e registros atualizados:
+
+- `docs/engineering/planning/FEATURE-STATUS.md`
+- `docs/engineering/planning/MILESTONES.md`
+- `docs/engineering/planning/ROADMAP.md`
+- `docs/engineering/planning/IMPLEMENTATION-ORDER.md`
+- `docs/engineering/planning/RISK-REGISTER.md`
+- `docs/engineering/planning/TECHNICAL-DEBT.md`
+- `docs/engineering/planning/README.md`
+
+### ADRs criados e aprovados
+
+Nenhuma ADR nova foi criada no Stage 4.
+
+As decisões do Stage 4 foram implementadas dentro das regras já aprovadas nos
+stages anteriores, especialmente:
+
+- `ADR-0001 — Rust como Linguagem da Implementação Oficial.md`
+- `ADR-0002 — Organização da Implementação em Workspace Cargo.md`
+- `ADR-0003 — Separação entre Frontend, Middle-end e Backend.md`
+- `ADR-0013 — Política de Dependências Externas.md`
+- `ADR-0015 — Estratégia Inicial de Testes.md`
+- `ADR-0016 — Organização Física do Repositório.md`
+
+### Infraestrutura concluída
+
+- `capi-sema` expandido para incluir inferência e verificação de tipos;
+- `capi-driver` integrado ao pipeline de `check_types`;
+- `capi-cli` integrado ao comando `capic check arquivo.capi`;
+- testes semânticos de Stage 4 adicionados à suíte `semantic_tests`;
+- testes de CLI para `capic check` adicionados;
+- dependência de lexer ajustada para uso de literais e operadores na semântica.
+
+### Implementações concluídas
+
+- `TypeId`, `GenericParamId` e `CoercionId` implementados;
+- tipos internos implementados para primitivos, `Unit`, nominais, funções,
+  generics, tuples, arrays, `ObjectId`, `Unknown` e `Error`;
+- interner de tipos implementado;
+- built-ins de tipos implementados;
+- tabela de tipos tipada por HIR, símbolos, parâmetros, locais, expressões,
+  statements, patterns e assinaturas implementada;
+- coleta de tipos nominais e assinaturas implementada;
+- inferência de tipos para literais, paths, chamadas, membros, indexação,
+  unary/binary, atribuição, tuples, arrays e `new` implementada para o
+  subconjunto inicial;
+- verificação de tipos de locais, retornos, condições, argumentos, chamadas e
+  atribuições implementada;
+- subtipagem nominal inicial implementada para reflexividade, classes,
+  herança transitiva e interfaces implementadas;
+- coerções de upcast registradas em `CoercionTable`;
+- resolução de chamadas simples e métodos de membro implementada;
+- generics do subconjunto inicial implementados com coleta de parâmetros,
+  aridade, instanciação e invariância;
+- diagnósticos de tipo implementados;
+- comando `capic check arquivo.capi` implementado.
+
+### Testes concluídos
+
+Validação executada em `capi-lang`:
+
+```bash
+cargo fmt --all --check
+cargo test -p capi-sema
+cargo test -p capi-cli
+cargo test --workspace
+cargo clippy --workspace --all-targets
+```
+
+Cobertura obrigatória concluída para o subconjunto implementado:
+
+- testes de modelo interno de tipos;
+- testes de interning de tipos;
+- testes de inferência de tipos;
+- testes de type checking;
+- testes de estados `Checked`, `CheckedWithErrors` e `Blocked`;
+- testes de chamadas resolvidas;
+- testes de coerções registradas;
+- testes de subtipagem por classe, herança transitiva e interface;
+- testes de rejeição de downcast implícito e coerções proibidas do subconjunto;
+- testes de generics por aridade, instanciação, duplicidade e invariância;
+- testes de diagnósticos de tipo estruturados;
+- testes de determinismo de IDs, diagnósticos e interning;
+- testes de CLI para `capic check`.
+
+Critérios de conclusão verificados:
+
+- programas válidos do subconjunto inicial são tipados corretamente;
+- programas inválidos do subconjunto inicial são rejeitados;
+- resultados de inferência são determinísticos;
+- subtipagem respeita a especificação aplicável ao subconjunto implementado;
+- diagnósticos de tipo são estruturados e reproduzíveis;
+- o resultado esperado é observável por `capic check arquivo.capi`;
+- todos os testes semânticos do subconjunto implementado passam.
+
+### Resultado demonstrável
+
+O resultado demonstrável do Stage 4 é:
+
+```bash
+capic check arquivo.capi
+```
+
+Durante desenvolvimento local:
+
+```bash
+cd capi-lang
+cargo run -p capi-cli -- check /tmp/stage4-ok.cap
+```
+
+Comportamento validado:
+
+- programa válido retorna código de saída `0`, sem stdout e sem stderr;
+- programa inválido retorna código de saída diferente de `0` e emite
+  diagnóstico em stderr.
+
+Exemplo de erro validado:
+
+```text
+error[TYPE0003]: type mismatch: expected Bool, found Int
+```
+
+### Pendências
+
+Nenhuma pendência bloqueante do Stage 4 para o subconjunto implementado.
+
+Dívidas aceitas registradas em `TECHNICAL-DEBT.md`:
+
+- superfície pública e testes completos de `ObjectId<T>`;
+- ambiguidade de overload por coerções;
+- bounds, inferência e substituição genérica de chamadas;
+- modelo canônico de `Optional<T>` e `Result<T, E>`;
+- dump tipado formal.
+
+Itens reservados para stages posteriores:
+
+- modelo de objetos completo;
+- overrides, layout, vtables e despacho dinâmico;
+- ownership, borrowing e regiões;
+- Domains;
+- MIR;
+- backend;
+- runtime;
+- biblioteca padrão.
+
+### Riscos
+
+- A subtipagem de `ObjectId<T>` deve ser completada quando a superfície pública
+  de identidade lógica entrar no subconjunto.
+- Generics iniciais devem evoluir sem quebrar aridade, invariância e interning
+  já validados.
+- O formato de dump tipado ainda precisa ser definido antes de snapshots
+  formais de typed HIR/types.
+- A MSRV `1.88.0` deve ser preservada até decisão formal de atualização.
+
+### Resultado da validação
+
+Stage 4 concluído conforme os critérios do Documento 28 para o subconjunto
+implementado.
+
+O workspace Rust representa tipos internamente, canonicaliza tipos por interning,
+infere e verifica tipos do subconjunto inicial, registra coerções, resolve
+chamadas simples, valida generics iniciais, emite diagnósticos de tipo
+estruturados, expõe `capic check arquivo.capi` e passa todos os testes
+obrigatórios aplicáveis ao stage.

@@ -3,7 +3,7 @@
 **Projeto:** Linguagem Capi  
 **Documento:** SEMANTIC-TESTS  
 **Status:** Aprovado  
-**Stage:** Stage 3 — HIR e resolução de nomes  
+**Stage:** Stages 3 e 4 — HIR, resolução de nomes e sistema de tipos  
 **Natureza:** Documento de engenharia bloqueante  
 **Base normativa:** Documentos de especificação 00 a 28
 
@@ -11,11 +11,11 @@
 
 ## 1. Finalidade
 
-Este documento define a estratégia de testes para a primeira etapa semântica da implementação oficial da Linguagem Capi.
+Este documento define a estratégia de testes para as etapas semânticas iniciais da implementação oficial da Linguagem Capi.
 
 Seu objetivo é estabelecer:
 
-- quais comportamentos semânticos do Stage 3 devem ser testados;
+- quais comportamentos semânticos dos Stages 3 e 4 devem ser testados;
 - onde os testes devem viver;
 - quais camadas de teste são obrigatórias;
 - como validar lowering de AST para HIR;
@@ -25,7 +25,8 @@ Seu objetivo é estabelecer:
 - como validar resolução de nomes;
 - como testar diagnósticos semânticos iniciais;
 - como testar o resultado demonstrável `capic --emit hir`;
-- quais critérios precisam ser atendidos para concluir o Stage 3.
+- como testar o resultado demonstrável `capic check`;
+- quais critérios precisam ser atendidos para concluir os Stages 3 e 4.
 
 ---
 
@@ -49,14 +50,18 @@ Este documento cobre:
 - testes de ambiguidades;
 - testes de diagnósticos semânticos iniciais;
 - testes de dump de HIR inicial e HIR resolvida;
-- testes de CLI para `capic --emit hir`.
+- testes de CLI para `capic --emit hir`;
+- testes de modelo de tipos;
+- testes de interning de tipos;
+- testes de inferência de tipos;
+- testes do pipeline de type checking;
+- testes de subtipagem e coerções;
+- testes de generics do subconjunto inicial;
+- testes de diagnósticos de tipo;
+- testes de CLI para `capic check`.
 
 Este documento não cobre:
 
-- inferência ou verificação de tipos;
-- subtipagem;
-- coerções;
-- seleção de overload;
 - checagem de ownership;
 - borrow checker;
 - análise de regiões;
@@ -69,8 +74,6 @@ Este documento não cobre:
 
 Esses temas pertencem a:
 
-- `TYPE-INFERENCE.md`;
-- `TYPE-CHECKING-PIPELINE.md`;
 - `OWNERSHIP-TESTS.md`;
 - `MIR-TESTS.md`;
 - `CODEGEN-TESTS.md`;
@@ -81,7 +84,7 @@ Esses temas pertencem a:
 
 ## 3. Princípios
 
-Os testes semânticos do Stage 3 devem seguir:
+Os testes semânticos dos Stages 3 e 4 devem seguir:
 
 - determinismo;
 - fixtures pequenas e legíveis;
@@ -93,15 +96,15 @@ Os testes semânticos do Stage 3 devem seguir:
 - ausência de dependência de caminhos absolutos;
 - ausência de dependência de ordem instável de mapas;
 - preservação de regressões corrigidas;
-- não antecipação de tipagem.
+- não antecipação de fases posteriores ao Stage 4.
 
-Um teste semântico deve falhar de forma local: ao quebrar, deve ficar claro se o problema é lowering, HIR, escopo, símbolo, import, resolução, diagnóstico ou dump.
+Um teste semântico deve falhar de forma local: ao quebrar, deve ficar claro se o problema é lowering, HIR, escopo, símbolo, import, resolução, tipo, inferência, coerção, generics, diagnóstico ou dump.
 
 ---
 
 ## 4. Camadas de Teste
 
-O Stage 3 deve usar seis camadas principais.
+Os Stages 3 e 4 devem usar camadas de teste compatíveis com a evolução do pipeline semântico.
 
 | Camada | Objetivo |
 | --- | --- |
@@ -111,6 +114,9 @@ O Stage 3 deve usar seis camadas principais.
 | Compile-pass semântico | Validar programas que passam por lowering e resolução. |
 | Compile-fail semântico | Validar duplicidade, inexistência, ambiguidade e erros de resolução. |
 | CLI | Validar `capic --emit hir arquivo.capi`. |
+| Type model | Validar `TypeId`, `TypeKind`, `TypeTable` e propriedades de tipos. |
+| Type inference/checking | Validar `HIR resolvida -> HIR tipada`. |
+| Type compile-pass/fail | Validar programas aceitos ou rejeitados por `capic check`. |
 
 Testes unitários devem cobrir invariantes locais. Snapshots devem ser usados quando a saída textual de HIR, símbolos, escopos ou diagnósticos for contrato observado.
 
@@ -142,6 +148,11 @@ capi-lang/
         ├── scopes/
         ├── symbols/
         ├── resolution/
+        ├── types/
+        ├── inference/
+        ├── checking/
+        ├── coercions/
+        ├── generics/
         ├── pass/
         ├── fail/
         └── snapshots/
@@ -168,6 +179,10 @@ resolves_local_before_global
 reports_duplicate_symbol_in_same_scope
 reports_unresolved_name
 reports_ambiguous_wildcard_import
+infers_local_type_from_initializer
+reports_type_mismatch_in_assignment
+records_object_id_upcast_coercion
+rejects_invalid_generic_arity
 ```
 
 Evitar:
@@ -190,6 +205,10 @@ symbol_duplicate_local.cap
 resolve_local_shadowing.cap
 resolve_missing_name.cap
 resolve_ambiguous_import.cap
+type_infer_local_literal.cap
+type_fail_assignment_mismatch.cap
+coercion_object_id_upcast.cap
+generic_optional_arity.cap
 hir_dump_function.snapshot
 ```
 
@@ -206,6 +225,7 @@ Contrato conceitual:
 ```rust
 fn lower_source(text: &str) -> LoweringTestOutput;
 fn resolve_source(text: &str) -> NameResolutionTestOutput;
+fn check_source(text: &str) -> TypeCheckTestOutput;
 
 struct LoweringTestOutput {
     hir: Option<Hir>,
@@ -220,6 +240,18 @@ struct NameResolutionTestOutput {
     bindings: Option<NameBindingTable>,
     diagnostics: Vec<Diagnostic>,
 }
+
+struct TypeCheckTestOutput {
+    hir: Option<Hir>,
+    scopes: Option<ScopeGraph>,
+    symbols: Option<SymbolTable>,
+    bindings: Option<NameBindingTable>,
+    types: Option<TypeTable>,
+    typed_hir: Option<TypedHirMap>,
+    coercions: Option<CoercionTable>,
+    calls: Option<CallResolutionTable>,
+    diagnostics: Vec<Diagnostic>,
+}
 ```
 
 Helpers devem:
@@ -229,10 +261,11 @@ Helpers devem:
 - falhar se houver diagnóstico léxico ou sintático inesperado;
 - permitir executar apenas até HIR inicial;
 - permitir executar até resolução de nomes;
+- permitir executar até type checking;
 - normalizar nomes de arquivos em snapshots;
 - oferecer APIs para consultar spans por trecho de texto;
 - não depender de paths absolutos;
-- não executar inferência de tipos.
+- executar inferência de tipos somente quando o teste chamar helper de check/type checking.
 
 ---
 
@@ -457,14 +490,19 @@ Mensagens textuais podem ser validadas por snapshot quando o estilo já estiver 
 
 ## 14. Testes de Dumps
 
-O Stage 3 deve validar dumps relacionados a:
+Os Stages 3 e 4 devem validar dumps relacionados a:
 
 - HIR inicial;
 - HIR resolvida;
+- HIR tipada;
 - escopos, se houver dump dedicado;
 - símbolos, se houver dump dedicado;
+- tipos, se houver dump dedicado;
+- coerções, se houver dump dedicado;
 - diagnósticos de resolução em formato textual ou estruturado;
+- diagnósticos de tipo em formato textual ou estruturado;
 - CLI `capic --emit hir`.
+- CLI `capic check`.
 
 Requisitos:
 
@@ -474,6 +512,8 @@ Requisitos:
 - IDs impressos em ordem estável;
 - caminhos não resolvidos marcados como pendentes na HIR inicial;
 - bindings exibidos apenas na HIR resolvida;
+- tipos exibidos apenas em HIR tipada ou dump de type checking;
+- coerções exibidas apenas quando o pipeline de type checking for executado;
 - erros e HIR parcial exibidos explicitamente.
 
 ---
@@ -525,9 +565,162 @@ Cada caso deve declarar a causa principal e evitar misturar muitos erros indepen
 
 ---
 
+## 16.1 Testes Semânticos de Tipagem — Stage 4
+
+O Stage 4 deve acrescentar testes semânticos para `capic check` e para as estruturas internas do sistema de tipos.
+
+Esses testes pertencem à suíte semântica porque validam a HIR enriquecida por tipos, diagnósticos de tipo e contratos entre resolução de nomes, inferência, subtipagem, coerções e generics.
+
+### 16.1.1 Testes de Modelo de Tipos
+
+Testes de modelo de tipos devem cobrir:
+
+- criação determinística de `TypeId`;
+- tipos primitivos;
+- `Unit`;
+- tipos por valor;
+- tipos por identidade;
+- tipos de Domain;
+- `ObjectId<T>`;
+- tipos de assinatura;
+- tipos genéricos;
+- tipos `Unknown` e `Error`;
+- propriedades de tipo;
+- origem declarada versus inferida;
+- associação entre `HirTypeRefId`, `SymbolId` e `TypeId`;
+- ausência de `null` como tipo válido.
+
+### 16.1.2 Testes de Interning de Tipos
+
+Testes de interning de tipos devem cobrir:
+
+- built-ins registrados uma única vez;
+- duas ocorrências de `Int` compartilhando `TypeId`;
+- `Unit` internado como tipo válido;
+- tipos nominais distintos não mesclados por nome textual;
+- `ObjectId<Conta>` compartilhando `TypeId` entre ocorrências equivalentes;
+- tuples equivalentes compartilhando `TypeId`;
+- tuples com ordem diferente produzindo tipos distintos;
+- `Optional<Int>` compartilhando `TypeId`;
+- `Optional<Int>` e `Optional<UInt>` distintos;
+- assinaturas equivalentes compartilhando `TypeId`;
+- variáveis de inferência distintas não mescladas indevidamente;
+- dump do interner determinístico.
+
+### 16.1.3 Testes de Inferência de Tipos
+
+Testes de inferência devem cobrir:
+
+- local inferido a partir de literal;
+- local com tipo explícito preservado;
+- incompatibilidade entre tipo explícito e inicializador;
+- expressão de nome herdando tipo de parâmetro ou local;
+- chamada simples com retorno inferido;
+- quantidade incorreta de argumentos;
+- argumento incompatível;
+- retorno compatível com assinatura;
+- retorno incompatível;
+- bloco vazio produzindo `Unit`;
+- bloco com expressão final produzindo tipo da expressão;
+- ramos de controle incompatíveis;
+- inferência de argumento genérico quando suportada;
+- falha de inferência genérica diagnosticada;
+- ausência de `Unknown` não diagnosticado na HIR tipada.
+
+### 16.1.4 Testes do Pipeline de Type Checking
+
+Testes do pipeline devem cobrir:
+
+- `capic check` aceitando programa válido básico;
+- `capic check` rejeitando tipo inexistente;
+- coleta de tipos declarados;
+- conversão de referências explícitas de tipo;
+- construção de assinaturas tipadas;
+- materialização de `TypedHirMap`;
+- registro de chamadas resolvidas;
+- registro de coerções;
+- estado `Checked`;
+- estado `CheckedWithErrors`;
+- estado `Blocked` quando entrada semântica impedir análise segura;
+- diagnósticos determinísticos;
+- dumps tipados determinísticos.
+
+### 16.1.5 Testes de Subtipagem e Coerções
+
+Testes de subtipagem e coerções devem cobrir:
+
+- reflexividade de tipos;
+- subclasse aceita como superclasse;
+- transitividade de herança;
+- hierarquias incompatíveis rejeitadas;
+- classe aceita como interface implementada;
+- classe rejeitada como interface não implementada;
+- `ObjectId<Sub>` aceito como `ObjectId<Super>`;
+- `ObjectId<Super>` rejeitado como `ObjectId<Sub>` implícito;
+- upcast registrado em `CoercionTable`;
+- downcast implícito diagnosticado;
+- conversão entre `ObjectId<T>` e inteiro rejeitada;
+- primitivos incompatíveis sem regra explícita;
+- `Unit` incompatível com valor significativo;
+- ambiguidade de overload por coerções diagnosticada quando aplicável.
+
+### 16.1.6 Testes de Generics
+
+Testes de generics devem cobrir:
+
+- declaração genérica com parâmetro único;
+- parâmetro genérico duplicado;
+- aplicação genérica com aridade correta;
+- argumento excedente;
+- argumento ausente não inferível;
+- inferência simples de argumento genérico em chamada;
+- conflito de inferência genérica;
+- bound satisfeito;
+- bound não satisfeito;
+- substituição em tipo de retorno;
+- substituição em tipo de parâmetro;
+- `Optional<Int>` internado de forma canônica;
+- `Optional` com aridade incorreta;
+- `Result<T, E>` quando suportado;
+- `Result` com aridade incorreta;
+- invariância de generics por padrão.
+
+### 16.1.7 Compile-Pass e Compile-Fail de Tipo
+
+Casos `compile-pass` de tipo devem validar programas que chegam até `Checked` sem diagnósticos bloqueantes.
+
+Cobertura mínima:
+
+- função com parâmetros e retorno compatíveis;
+- local inferido;
+- atribuição compatível;
+- chamada compatível;
+- upcast válido;
+- uso válido de `Optional<T>`;
+- aplicação genérica válida.
+
+Casos `compile-fail` de tipo devem validar programas rejeitados pelo Stage 4.
+
+Cobertura mínima:
+
+- atribuição incompatível;
+- retorno incompatível;
+- argumento incompatível;
+- chamada sem candidato aplicável;
+- chamada ambígua quando aplicável;
+- coerção proibida;
+- tipo usado em categoria inválida;
+- `ObjectId<T>` com `T` incompatível;
+- aplicação genérica inválida;
+- bound genérico não satisfeito.
+
+Cada caso deve declarar a causa principal esperada e evitar combinar erro de resolução de nomes com erro de tipo no mesmo fixture, salvo quando o teste for explicitamente de recuperação.
+
+---
+
 ## 17. Testes de Regressão
 
-Todo bug corrigido em lowering, HIR, escopos, símbolos ou resolução deve gerar teste de regressão.
+Todo bug corrigido em lowering, HIR, escopos, símbolos, resolução, inferência, type checking, subtipagem, coerções ou generics deve gerar teste de regressão.
 
 Regras:
 
@@ -549,11 +742,16 @@ Devem ser determinísticos:
 - `AstToHirMap`;
 - `ScopeId`;
 - `SymbolId`;
+- `TypeId`;
+- variáveis de inferência;
 - ordem de símbolos em dumps;
 - ordem de escopos em dumps;
+- ordem de tipos em dumps;
+- ordem de coerções em dumps;
 - ordem de candidatos ambíguos;
 - ordem de diagnósticos;
-- saída de `capic --emit hir`.
+- saída de `capic --emit hir`;
+- saída de `capic check`.
 
 Nenhum teste deve depender de:
 
@@ -577,6 +775,12 @@ Testes de CLI devem cobrir:
 - normalização de caminhos em saída;
 - código de saída de sucesso para caso válido;
 - código de saída de falha controlada para erro de usuário.
+- `capic check arquivo.capi` para programa tipado válido;
+- `capic check arquivo.capi` para erro de tipo;
+- `capic check arquivo.capi` com coerção válida;
+- `capic check arquivo.capi` com generics válidos quando suportados;
+- código de saída de sucesso para programa aceito por type checking;
+- código de saída de falha controlada para erro de tipo.
 
 Se o comando possuir modo explícito para HIR inicial versus HIR resolvida, ambos devem ter testes separados.
 
@@ -600,7 +804,7 @@ Fixtures não devem ser usadas como exemplos de linguagem completa quando o obje
 
 ## 21. Critérios de Aceite
 
-Este documento é considerado aprovado para orientar o Stage 3 quando:
+Este documento é considerado aprovado para orientar os Stages 3 e 4 quando:
 
 - define camadas de teste semântico;
 - define organização esperada;
@@ -609,6 +813,11 @@ Este documento é considerado aprovado para orientar o Stage 3 quando:
 - define testes obrigatórios para escopos;
 - define testes obrigatórios para símbolos;
 - define testes obrigatórios para resolução;
+- define testes obrigatórios para modelo de tipos;
+- define testes obrigatórios para interning de tipos;
+- define testes obrigatórios para inferência de tipos;
+- define testes obrigatórios para type checking;
+- define testes obrigatórios para subtipagem, coerções e generics;
 - define testes de diagnósticos, dumps, pass/fail, CLI e regressão;
 - define critérios de determinismo.
 
@@ -623,6 +832,19 @@ A suíte semântica do Stage 3 será considerada suficiente quando:
 - `capic --emit hir` possuir teste demonstrável;
 - todos os testes obrigatórios passarem.
 
+A suíte semântica do Stage 4 será considerada suficiente quando:
+
+- tipos internos forem testados para o subconjunto inicial;
+- interning de tipos for testado para built-ins, tipos nominais, compostos e genéricos;
+- inferência de tipos cobrir locais, expressões, chamadas, retornos e blocos;
+- type checking validar atribuições, retornos, argumentos, chamadas e estados do pipeline;
+- subtipagem e coerções cobrirem classes, interfaces, `ObjectId<T>`, upcast e conversões proibidas;
+- generics cobrirem aridade, inferência, bounds, substituição, `Optional<T>`, `Result<T, E>` e invariância;
+- erros de tipo produzirem diagnósticos estruturados;
+- `capic check` possuir teste demonstrável;
+- HIR tipada não contiver `Unknown` não diagnosticado;
+- todos os testes semânticos aplicáveis passarem.
+
 ---
 
 ## 22. Relações Normativas
@@ -631,6 +853,7 @@ Este documento depende diretamente de:
 
 - Documento 16 — HIR;
 - Documento 17 — Resolução de Nomes;
+- Documento 18 — Inferência e Verificação de Tipos;
 - Documento 28 — Plano de Desenvolvimento da Implementação Oficial;
 - `AST-MODEL.md`;
 - `AST-LOWERING.md`;
@@ -638,6 +861,12 @@ Este documento depende diretamente de:
 - `SCOPE-MODEL.md`;
 - `SYMBOL-MODEL.md`;
 - `NAME-RESOLUTION.md`;
+- `TYPE-MODEL.md`;
+- `TYPE-INTERNING.md`;
+- `TYPE-INFERENCE.md`;
+- `TYPE-CHECKING-PIPELINE.md`;
+- `SUBTYPING-AND-COERCIONS.md`;
+- `GENERICS-IMPLEMENTATION.md`;
 - `DIAGNOSTIC-DATA-MODEL.md`;
 - `DIAGNOSTIC-ARCHITECTURE.md`;
 - `TEST-STRATEGY.md`;
@@ -647,6 +876,8 @@ Este documento depende diretamente de:
 Este documento orienta diretamente:
 
 - implementação dos testes do Stage 3;
+- implementação dos testes do Stage 4;
 - testes de `capic --emit hir`;
+- testes de `capic check`;
 - testes de regressão semântica;
-- critérios de conclusão do Stage 3.
+- critérios de conclusão dos Stages 3 e 4.

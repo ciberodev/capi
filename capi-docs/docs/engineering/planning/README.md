@@ -49,7 +49,8 @@ Stage 0 — Fundação do projeto: Concluído
 Stage 1 — Fontes, diagnósticos e lexer: Concluído
 Stage 2 — Parser e AST: Concluído
 Stage 3 — HIR e resolução de nomes: Concluído
-Próximo stage: Stage 4 — Sistema de tipos
+Stage 4 — Sistema de tipos: Concluído
+Próximo stage: Stage 5 — Modelo de objetos
 ```
 
 O registro declara, por stage:
@@ -72,6 +73,7 @@ Stage 0 — capic --help, capic --version
 Stage 1 — capic --emit tokens arquivo.capi
 Stage 2 — capic --emit ast arquivo.capi
 Stage 3 — capic --emit hir arquivo.capi
+Stage 4 — capic check arquivo.capi
 ```
 
 ---
