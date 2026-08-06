@@ -149,6 +149,11 @@ jobs:
           printf '%s\n' "$output" | grep "Symbols"
           printf '%s\n' "$output" | grep "Bindings"
 
+      - name: Check semantic type check
+        run: |
+          output="$(cargo run -p capi-cli --bin capic --locked -- check tests/semantic/pass/basic.cap)"
+          test -z "$output"
+
       - name: Check missing source error
         run: |
           set +e
